@@ -59,6 +59,10 @@ button{font:inherit;cursor:pointer}
 .blk.crack .rw{color:#7dff7a;font-size:.9em}
 .blk.miss{background-color:#2a2a2a;background-image:var(--tex-crack);border-style:dashed;color:#7dff7a}
 .blk.extra{background-color:#7a2a2a;background-image:var(--tex-crack);color:#ffc0b0}
+.blk.soft{background-color:#c9c9c9;background-image:none;border-style:dashed;border-color:#8a8a8a;color:#6a6a6a;box-shadow:none;font-weight:700}
+.blk.soft s{color:#8a8a8a}
+.blk.soft .mn{color:#5a5a5a;font-weight:600}
+.blk.syn .mn{color:#3a2600;background:#fff9;padding:0 3px;margin-top:2px}
 .blk.opt{opacity:.55;font-weight:600}
 .blk .mn{font-size:11px;color:#a04a00;font-weight:700}
 .blk.drop{animation:drop .45s cubic-bezier(.3,1.6,.5,1) both}
@@ -318,46 +322,149 @@ function tokenize(str,user){
 }
 function lev(a,b){if(Math.abs(a.length-b.length)>1)return 9;const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,j)=>j);
  for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n];}
-/* 2 = juste, 1 = juste avec une petite faute signalée, 0 = faux */
+/* ================= VÉRIFICATION SOUPLE : le sens d'abord =================
+   Mots-clés (termes de géométrie, nombres, symboles, si / alors / et / donc,
+   négations, noms d'angles) : exigés, une erreur se voit à sa place.
+   Petits mots (articles, prépositions, qui, que, est, sont...) : libres,
+   montrés en gris « petit mot à revoir », sans fissure et sans repasse.
+   Synonymes du cours acceptés fiche par fiche (liste prudente).
+   Le « si » et le « alors » ne s'échangent pas : ce serait la réciproque. */
+var NAME_LOOSE=false;
+const FREE=new Set("le la les l' un une des du de d' a au aux en par pour avec sur sous dans entre vers dont qui que qu' est sont ont ce cet cette ces c' sa ses son leur leurs ils il elles elle on se s' y ayant situes situe situee situees".split(" "));
+/* petits mots propres à une fiche (n'en changent pas le sens) */
+const FREEX={18:["possede"],10:["formes"],11:["formes"],15:["formes"],16:["formes"],17:["tout"],20:["3"],14:["souvent"]};
+function stem1(s){if(/\d/.test(s))return s.replace(/°/g,"");return s.replace(/aux$/,"al").replace(/(ent|s|x)$/,"").replace(/e+$/,"");}
+function stemW(l){return String(l).split("-").map(stem1).join("-");}
+const DANGER=new Set("ne n' pas non jamais aucun aucune si alors parallele paralleles secante secantes perpendiculaire perpendiculaires adjacents supplementaires complementaires opposes correspondants alternes-internes alternes-externes internes externes bissectrice rectangle isocele equilateral reciproque".split(" ").map(stemW));
+function isFree(t,f){if(!t||t.p||t.name||t.sym||t.syn)return false;if(FREEX[f]&&FREEX[f].includes(t.l))return true;if(/\d/.test(t.l))return false;return FREE.has(t.l);}
+function isDanger(t){return !!t&&(t.syn?false:(/\d/.test(t.l)||t.sym||DANGER.has(stemW(t.l))));}
+const ELI=new Set(["d","l","s","qu","n","c"]);
+function siFix(T){T=T.map(t=>(!t.p&&!t.name&&ELI.has(t.l))?Object.assign({},t,{n:t.n+"'",l:t.l+"'"}):t);return T.map((t,i)=>{if(t.l==="s'"){const nx=T[i+1];if(nx&&/^ils?$/.test(nx.l))return Object.assign({},t,{n:"si",l:"si"});}return t;});}
+/* ---- synonymes ---- */
+const SYN_G={EGAL:["ont la même mesure","ont une même mesure","ont même mesure","sont de même mesure","sont de la même mesure","sont égaux","sont égales","ont des mesures égales","ont une mesure égale","a la même mesure","est de même mesure","de même mesure","de la même mesure","égaux","égales","de mesures égales","de mesure égale"]};
+const SYN_VAUT=["vaut","valent","est égale à","est égal à","sont égales à","égale à","égal à","égale","égal","fait","font","mesure","mesurent","est de","sont de","est","égalent","="];
+const SYN_F={
+ 3:{PART:["partage","coupe","divise","sépare"]},
+ 7:{COUPE:["coupe","croise"]},
+ 12:{SOMME:["la somme de leurs mesures","la somme des mesures","leur somme"]},
+ 13:{SOMME:["la somme de leurs mesures","la somme des mesures","leur somme"]},
+ 14:{ECH:["en échangeant","en inversant","en permutant"]},
+ 17:{SOMME3:["la somme des mesures des angles","la somme des angles","la somme des mesures de ses angles","la somme de ses angles","la somme des mesures de ses trois angles","la somme de ses trois angles","la somme des trois angles","la somme des mesures des trois angles"]},
+ 18:{DROIT:["un angle de mesure égale à 90°","un angle droit","un angle de 90°","un angle mesurant 90°","un angle de mesure 90°","un angle qui mesure 90°"],
+     SOMME2:["la somme des mesures des deux autres angles","la somme des deux autres angles"]}
+};
+function compileGroups(G,f){const out=[];for(const id in G){const g={id,pats:[],lead:new Set()};
+ for(const ph of G[id]){const T=siFix(tokenize(ph,true).filter(t=>!t.p));const keys=[];let first=true;
+  for(const t of T){if(isFree(t,f)){if(first)g.lead.add(t.l);}else{first=false;keys.push(stemW(t.l));}}
+  if(keys.length)g.pats.push(keys);}
+ g.pats.sort((a,b)=>b.length-a.length);out.push(g);}return out;}
+const SYNC={};function groupsOf(f){if(!SYNC[f])SYNC[f]={F:compileGroups(SYN_F[f]||{},f),G:compileGroups(SYN_G,f)};return SYNC[f];}
+const VAUTC=SYN_VAUT.map(ph=>tokenize(ph,true).filter(t=>!t.p).map(t=>stemW(t.l))).sort((a,b)=>b.length-a.length);
+function mkSyn(span,id,f){const c=span.map(t=>t.c).join(" ").replace(/' /g,"'");
+ return {d:c,c,n:"§"+id,l:"§"+id,o:span.every(t=>t.o),syn:id,ks:span.filter(t=>!isFree(t,f)).map(t=>stemW(t.l)).join(" "),parts:span};}
+function applyGroups(T,groups,f){
+ for(let i=0;i<T.length;i++){const t=T[i];if(t.syn||isFree(t,f))continue;let best=null;
+  for(const g of groups)for(const p of g.pats){let j=i,k=0,last=-1;
+   while(k<p.length&&j<T.length){const u=T[j];if(u.syn)break;if(isFree(u,f)){if(k===0)break;j++;continue;}
+    if(stemW(u.l)===p[k]){last=j;k++;j++;}else break;}
+   if(k===p.length&&(!best||p.length>best.len))best={g,len:p.length,end:last};}
+  if(best){let a=i;while(a>0&&a>i-3&&!T[a-1].syn&&isFree(T[a-1],f)&&best.g.lead.has(T[a-1].l))a--;
+   const span=T.slice(a,best.end+1);T.splice(a,span.length,mkSyn(span,best.g.id,f));i=a;}}
+ return T;}
+function applyVaut(T,f){
+ for(let i=0;i<T.length;i++){if(T[i].syn)continue;
+  for(const p of VAUTC){const nx=T[i+p.length];if(!nx||nx.syn||!/\d/.test(nx.l))continue;let ok=true;
+   for(let k=0;k<p.length;k++){const u=T[i+k];if(u.syn||stemW(u.l)!==p[k]){ok=false;break;}}
+   if(ok){const span=T.slice(i,i+p.length);T.splice(i,p.length,mkSyn(span,"VAUT",f));break;}}}
+ return T;}
+function mergeSyn(T,f){const g=groupsOf(f);let o=T.slice();o=applyGroups(o,g.F,f);o=applyVaut(o,f);o=applyGroups(o,g.G,f);return o;}
+/* ---- comparaison d'un mot : 2 = juste, 1 = petite faute acceptée, 3 = synonyme, 0 = faux ---- */
 function eqTok(r,u){
+ if(r.syn||u.syn){if(!(r.syn&&u.syn&&r.n===u.n))return 0;return r.ks===u.ks?2:3;}
+ if(NAME_LOOSE&&r.name&&u.name&&r.c.length===u.c.length&&/^[A-Z]+$/.test(r.c)&&/^[A-Z]+$/.test(u.c))return 2;
  if(r.n===u.n)return 2;
  if(r.l===u.l)return 1;
  const rl=r.l.replace(/°/g,""),ul=u.l.replace(/°/g,"");
  if(rl===ul&&/\d/.test(rl))return 1;
+ if(/\d/.test(rl)||/\d/.test(ul))return 0;
+ if(rl.length>=3&&ul.length>=3&&stemW(rl)===stemW(ul))return 1;
  if(r.l.length>=5&&u.l.length>=4&&lev(r.l,u.l)<=1)return 1;
  return 0;
 }
-function minorWhy(r,u){if(r.l===u.l)return "accent";if(r.l.replace(/°/g,"")===u.l.replace(/°/g,""))return "le °";return "orthographe";}
-function diff(refT,usrT){
- const R=refT.filter(t=>!t.p),U=usrT.filter(t=>!t.p);
- const m=R.length,n=U.length,S=[];for(let i=0;i<=m;i++)S.push(new Float32Array(n+1));
- for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--){const e=eqTok(R[i],U[j]);S[i][j]=Math.max(S[i+1][j],S[i][j+1],e?S[i+1][j+1]+(e===2?1:.8):0);}
- const raw=[];let i=0,j=0;
- while(i<m&&j<n){const e=eqTok(R[i],U[j]);
-  if(e&&Math.abs(S[i][j]-(S[i+1][j+1]+(e===2?1:.8)))<1e-4){raw.push({k:e===2?"ok":"mn",r:R[i],u:U[j]});i++;j++;}
-  else if(S[i+1][j]>=S[i][j+1]){raw.push({k:"mi",r:R[i]});i++;}
-  else{raw.push({k:"ex",u:U[j]});j++;}}
- while(i<m)raw.push({k:"mi",r:R[i++]});while(j<n)raw.push({k:"ex",u:U[j++]});
- // fusion manquant + en trop = mot faux à la même place
+function minorWhy(r,u){if(r.l===u.l)return "accent";if(r.l.replace(/°/g,"")===u.l.replace(/°/g,""))return "le °";if(stemW(r.l)===stemW(u.l))return "accord";return "orthographe";}
+function segsOf(T){const si=T.findIndex(t=>t.l==="si");if(si<0)return T.map(()=>0);let al=-1;for(let i=si+1;i<T.length;i++)if(T[i].l==="alors"){al=i;break}
+ return T.map((t,i)=>i<si?0:(al>=0&&i>=al?2:1));}
+const _refCache=new WeakMap();
+function diff(refT,usrT,f){
+ if(f==null)f=refT.__f;
+ let R=_refCache.get(refT);if(!R){R=mergeSyn(siFix(refT.filter(t=>!t.p)),f);_refCache.set(refT,R);}
+ const U=mergeSyn(siFix(usrT.filter(t=>!t.p)),f);
+ const m=R.length,n=U.length;
+ const E=(r,u)=>{if(isFree(r,f)!==isFree(u,f))return 0;return eqTok(r,u);};
+ const W=(e,r)=>!e?0:isFree(r,f)?(e===2?.4:.3):(e===1?.8:1);
+ const S=[];for(let i=0;i<=m;i++)S.push(new Float32Array(n+1));
+ for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--){const e=E(R[i],U[j]);S[i][j]=Math.max(S[i+1][j],S[i][j+1],e?S[i+1][j+1]+W(e,R[i]):0);}
+ let raw=[];let i=0,j=0;
+ while(i<m&&j<n){const e=E(R[i],U[j]);
+  if(e&&Math.abs(S[i][j]-(S[i+1][j+1]+W(e,R[i])))<1e-4){const fr=isFree(R[i],f);raw.push({k:fr||e===2?"ok":e===3?"sy":"mn",r:R[i],u:U[j],i,j});i++;j++;}
+  else if(S[i+1][j]>=S[i][j+1]){raw.push({k:"mi",r:R[i],i});i++;}
+  else{raw.push({k:"ex",u:U[j],j});j++;}}
+ while(i<m){raw.push({k:"mi",r:R[i],i});i++;}while(j<n){raw.push({k:"ex",u:U[j],j});j++;}
+ // ordre un peu différent : un mot-clé (pas un terme de géométrie, pas un nombre) déplacé dans la même partie de la phrase
+ const sR=segsOf(R),sU=segsOf(U);
+ for(const o of raw){if(o.k!=="mi"||o.r.o||isFree(o.r,f)||isDanger(o.r)||o.r.syn&&false)continue;
+  const x=raw.find(q=>q.k==="ex"&&!q.used&&!isFree(q.u,f)&&sR[o.i]===sU[q.j]&&E(o.r,q.u)>0);
+  if(x){x.used=true;o.k="mv";o.u=x.u;}}
+ raw=raw.filter(q=>!q.used);
+ // trous : mot-clé oublié ou remplacé = erreur ; petit mot = gris
  const ops=[];let run=[];
- const flush=()=>{const mi=run.filter(o=>o.k==="mi"&&!o.r.o),ex=run.filter(o=>o.k==="ex");
-  let a=0;for(const o of run){if(o.k==="mi"&&o.r.o){ops.push({k:"op",r:o.r});continue}
-   if(o.k==="mi"){const idx=mi.indexOf(o);if(idx<ex.length){ops.push({k:"wr",r:o.r,u:ex[idx].u});}else ops.push(o);}
-   else{const idx=ex.indexOf(o);if(idx>=mi.length)ops.push(o);}}
+ const flush=()=>{if(!run.length)return;
+  const miK=run.filter(o=>o.k==="mi"&&!o.r.o&&!isFree(o.r,f)),miF=run.filter(o=>o.k==="mi"&&!o.r.o&&isFree(o.r,f));
+  const exK=run.filter(o=>o.k==="ex"&&!isFree(o.u,f)),exF=run.filter(o=>o.k==="ex"&&isFree(o.u,f));
+  const pair=new Map();let a=0;for(const o of miK){if(a<exK.length){pair.set(o,exK[a]);exK[a].paired=true;a++;}}
+  let b=0;for(const o of miF){if(b<exF.length){pair.set(o,exF[b]);exF[b].paired=true;b++;}}
+  for(const o of run){
+   if(o.k==="mi"){if(o.r.o){ops.push({k:"op",r:o.r});continue}const p=pair.get(o);
+    if(isFree(o.r,f))ops.push(p?{k:"fw",r:o.r,u:p.u}:{k:"fm",r:o.r});
+    else ops.push(p?{k:"wr",r:o.r,u:p.u}:{k:"mi",r:o.r});}
+   else if(!o.paired)ops.push(!isFree(o.u,f)&&isDanger(o.u)?{k:"ex",u:o.u}:{k:"fx",u:o.u});}
   run=[];};
  for(const o of raw){if(o.k==="mi"||o.k==="ex")run.push(o);else{flush();ops.push(o);}}flush();
- let err=0,minor=0;for(const o of ops){if(o.k==="wr"||o.k==="mi"||o.k==="ex")err++;if(o.k==="mn")minor++;}
- return {ops,err,minor,ok:err===0&&n>0,n};
+ // si / alors échangés ?
+ let swapped=false;const rs=R.findIndex(t=>t.l==="si"),ra=R.findIndex(t=>t.l==="alors");
+ if(rs>=0&&ra>rs){const keyset=(T,sg,s)=>new Set(T.filter((t,k)=>sg[k]===s&&!t.o&&!isFree(t,f)&&t.l!=="si"&&t.l!=="alors").map(t=>t.syn?t.n:stemW(t.l)));
+  const c1=keyset(R,sR,1),c2=keyset(R,sR,2);const both=[...c1].filter(x=>c2.has(x));both.forEach(x=>{c1.delete(x);c2.delete(x);});
+  const u1=keyset(U,sU,1),u2=keyset(U,sU,2);
+  const hit=(A,B)=>[...A].filter(x=>B.has(x)).length;
+  if(c1.size&&c2.size&&hit(c1,u2)>=Math.max(1,Math.ceil(c1.size/2))&&hit(c2,u1)>=Math.max(1,Math.ceil(c2.size/2)))swapped=true;}
+ let err=0,minor=0,match=0;const soft=[];
+ for(const o of ops){if(o.k==="wr"||o.k==="mi"||o.k==="ex")err++;if(o.k==="mn")minor++;
+  if(o.k==="ok"||o.k==="mn"||o.k==="sy"||o.k==="mv"||o.k==="fw")match+=isFree(o.r,f)?.5:1;
+  if(o.k==="fm"||o.k==="fx"||o.k==="fw"||o.k==="sy"||o.k==="mv")soft.push(o);}
+ if(swapped)err=Math.max(err,1);
+ const req=R.filter(t=>!t.o).reduce((s,t)=>s+(isFree(t,f)?.5:1),0)+ops.filter(o=>o.r&&o.r.o&&(o.k==="ok"||o.k==="mn"||o.k==="sy")).length;
+ const ulen=U.reduce((s,t)=>s+(isFree(t,f)?.5:1),0);
+ const score=2*match/((req+ulen)||1);
+ return {ops,err,minor,soft,swapped,score,ok:err===0&&n>0,n};
 }
-const REF={};for(const k in FICHES)REF[k]=tokenize(FICHES[k].txt,false);
+function softLabel(o){
+ if(o.k==="fm")return `« ${o.r.c} » oublié`;
+ if(o.k==="fx")return `« ${o.u.c} » en plus`;
+ if(o.k==="fw")return `« ${o.u.c} » au lieu de « ${o.r.c} »`;
+ if(o.k==="sy")return `« ${o.u.c} » pour « ${o.r.c} »`;
+ if(o.k==="mv")return `« ${o.r.c} » déplacé`;return "";}
+function softText(res){const s=(res.soft||[]).map(softLabel).filter(Boolean);if(!s.length)return "";
+ return s.slice(0,6).join(" · ")+(s.length>6?" …":"");}
+const SWAP_MSG="Attention : tu as échangé la partie « si » et la partie « alors ». Ça devient la réciproque, ce n'est plus la même propriété !";
+const REF={};for(const k in FICHES){REF[k]=siFix(tokenize(FICHES[k].txt,false));REF[k].__f=+k;}
 const K1=new Set(["si","alors","paralleles","secante","alternes-internes","meme","mesure","180°"]);
-const K2=new Set(["correspondants","adjacents","opposes","sommet","somme","90°","bissectrice","complementaires","supplementaires","reciproque","triangle","rectangle","isocele","equilateral","interieur","exterieur","cote","commun","prolongement","distincts","coupe","coupees","definissent","intersection","demi-droite","demi-droites","base","mesures","angles","droites","hypothese","conclusion","echangeant","partage","valeur","absolue","origine","unite","sens","abscisse","signe","relatif","droite","points","vaut","formes","proposition","propriete","possede","tout"]);
-const STOP=new Set(["le","la","les","de","des","du","un","une","et","a","en","d'","l'","s'","qu'","qui","ces","sa","ses","leur","leurs","par","ont","est","sont","ils","il","dont","on","se","sur","dans","pour","ce","au","aux"]);
-function erasable(t){return !(t.p||t.o||t.sym||t.name||/^\d+$/.test(t.n)&&false);}
+const K2=new Set(["correspondants","adjacents","opposes","sommet","somme","90°","bissectrice","complementaires","supplementaires","reciproque","triangle","rectangle","isocele","equilateral","interieur","exterieur","cote","commun","prolongement","distincts","coupe","coupees","definissent","intersection","demi-droite","demi-droites","base","mesures","angles","droites","hypothese","conclusion","echangeant","partage","valeur","absolue","origine","unite","sens","abscisse","signe","relatif","droite","points","vaut","proposition","propriete","possede"]);
+/* l'effacement progressif ne cache que des mots-clés, jamais un petit mot */
+function erasable(t,f){return !(t.p||t.o||t.sym||t.name)&&!isFree(t,f)&&!/'$/.test(t.c);}
 function pickGaps(f,pass,seed){
- const T=REF[f],idx=[];T.forEach((t,i)=>{if(erasable(t))idx.push(i)});
+ const T=REF[f],idx=[];T.forEach((t,i)=>{if(erasable(t,f))idx.push(i)});
  const r=rng(f*977+pass*31+seed*7+1);
- const pr=i=>{const t=T[i];let p=K1.has(t.l)?300:K2.has(t.l)?200:STOP.has(t.l)?10:50+t.l.length*2;return p+r()*25;};
+ const pr=i=>{const t=T[i];let p=K1.has(t.l)?300:K2.has(t.l)?200:50+t.l.length*2;return p+r()*25;};
  const k=pass===2?Math.max(1,Math.round(.25*idx.length)):Math.max(2,Math.round(.6*idx.length));
  return new Set(idx.map(i=>[i,pr(i)]).sort((a,b)=>b[1]-a[1]).slice(0,k).map(a=>a[0]));
 }
@@ -832,32 +939,40 @@ function renderForge(){const f=FG.f,F=FICHES[f],s=FS(f);FG.res=false;
   g.addEventListener("keydown",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();if(e.key==="Enter"&&!gaps[k+1])$("fGo").click();else nx();}});
   g.addEventListener("input",()=>{if(/\s$/.test(g.value)){g.value=g.value.trim();nx();}});});
  const fe=typing?$("fText"):gaps[0];if(fe){try{fe.focus({preventScroll:true})}catch(_){}}}
+function softNote(res){return res.soft&&res.soft.length?` C'est juste ! Petits mots différents : ${softText(res)}. (En gris : petit mot à revoir, ça ne bloque pas.)`:"";}
+function okMsg(res,base){return res.soft&&res.soft.length?`C'est juste ! Petits mots différents : ${softText(res)}. (En gris : petit mot à revoir, ça ne bloque pas.)`:base;}
+function koMsg(res,base){return (res.swapped?SWAP_MSG+" ":"")+base;}
 function resultHTML(ops){let k=0;return ops.map(o=>{const d=`style="animation-delay:${Math.min(k++,40)*45}ms"`;
  if(o.k==="ok")return wordBlock(o.r,"gold drop",d);
  if(o.k==="mn")return `<span class="blk minor drop" ${d}>${esc(o.u.c)}<span class="mn">${esc(o.r.c)} · ${minorWhy(o.r,o.u)}</span></span>`;
  if(o.k==="wr")return `<span class="blk crack drop" ${d}><s>${esc(o.u.c)}</s><span class="rw">${esc(o.r.c)}</span></span>`;
  if(o.k==="mi")return `<span class="blk miss drop" ${d}>${esc(o.r.c)}</span>`;
  if(o.k==="ex")return `<span class="blk extra drop" ${d}><s>${esc(o.u.c)}</s></span>`;
+ if(o.k==="sy")return `<span class="blk gold drop syn" ${d}>${esc(o.u.c)}<span class="mn">= ${esc(o.r.c)}</span></span>`;
+ if(o.k==="mv")return `<span class="blk gold drop" ${d}>${esc(o.r.c)}<span class="mn">ordre</span></span>`;
+ if(o.k==="fm")return `<span class="blk soft" ${d} title="petit mot à revoir">${esc(o.r.c)}</span>`;
+ if(o.k==="fx")return `<span class="blk soft" ${d} title="petit mot à revoir"><s>${esc(o.u.c)}</s></span>`;
+ if(o.k==="fw")return `<span class="blk soft" ${d} title="petit mot à revoir">${esc(o.u.c)}<span class="mn">${esc(o.r.c)}</span></span>`;
  if(o.k==="op")return `<span class="blk stone opt">${esc(o.r.c)}</span>`;
  if(o.k==="st")return wordBlock(o.r,"stone");if(o.k==="pu")return wordBlock(o.r,"");return "";}).join(" ");}
-function playResultSounds(ops){let i=0;for(const o of ops){if(i>16)break;if(o.k==="ok"||o.k==="mn"){SND.place(i);i++;}else if(o.k==="wr"||o.k==="mi"||o.k==="ex"){SND.crack(i);i++;}}}
+function playResultSounds(ops){let i=0;for(const o of ops){if(i>16)break;if(o.k==="ok"||o.k==="mn"||o.k==="sy"||o.k==="mv"){SND.place(i);i++;}else if(o.k==="wr"||o.k==="mi"||o.k==="ex"){SND.crack(i);i++;}}}
 function checkForge(){if(FG.res)return;const f=FG.f,s=FS(f);let res;
  if(FG.pass===2||FG.pass===3){const T=REF[f],ops=[];let err=0,minor=0;const inputs={};$("fBoard").querySelectorAll("input.gap").forEach(g=>inputs[g.dataset.i]=g.value);
   T.forEach((t,i)=>{if(!FG.gaps.has(i)){ops.push({k:t.p?"pu":"st",r:t});return;}const u=tokenize(inputs[i]||"",true).filter(x=>!x.p);
    if(!u.length){ops.push({k:"mi",r:t});err++;return;}const e=u.length===1?eqTok(t,u[0]):0;
    if(e===2)ops.push({k:"ok",r:t});else if(e===1){ops.push({k:"mn",r:t,u:u[0]});minor++;}else{ops.push({k:"wr",r:t,u:{c:u.map(x=>x.c).join(" ")}});err++;}});
-  res={ops,err,minor,ok:err===0};}
+  res={ops,err,minor,soft:[],ok:err===0};}
  else{const txt=$("fText").value;if(!txt.trim()){$("fMsg").className="msg ko";$("fMsg").textContent="Tape la fiche avant de frapper l'enclume.";return;}res=diff(REF[f],tokenize(txt,true));}
  FG.res=true;SND.anvil();$("fBoard").innerHTML=resultHTML(res.ops);$("fTyping").classList.add("hide");playResultSounds(res.ops);$("fGo").classList.add("hide");
  s.minor+=res.minor;const mnote=res.minor?` Attention à ${res.minor} petite${res.minor>1?"s":""} faute${res.minor>1?"s":""} (bloc de fer orange).`:"";
  if(FG.practice){schedule(f,res.ok);logEv(f,"entrainement",res.ok);if(!res.ok)s.errR+=1;save();
-  $("fMsg").className="msg "+(res.ok?"ok":"ko");$("fMsg").textContent=res.ok?"Parfait ! La fiche est toujours solide."+mnote:`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Cette fiche reviendra demain.`;
+  $("fMsg").className="msg "+(res.ok?"ok":"ko");$("fMsg").textContent=res.ok?okMsg(res,"Parfait ! La fiche est toujours solide."+mnote):koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Cette fiche reviendra demain.`);
   $("fAgain").classList.remove("hide");$("fAgain").textContent="🔁 Réessayer";updateHUD();return;}
  if(res.ok){s.pass=FG.pass+1;s.seed=0;save();refreshStation(f);
   if(s.pass>4)return forgeDone(f,mnote);
-  setTimeout(()=>SND.good(),500);$("fMsg").className="msg ok";$("fMsg").textContent="Parfait ! Tous les blocs sont en place."+mnote;$("fNext").classList.remove("hide");$("fNext").textContent=`Passe ${s.pass} ➜`;}
+  setTimeout(()=>SND.good(),500);$("fMsg").className="msg ok";$("fMsg").textContent=okMsg(res,"Parfait ! Tous les blocs sont en place."+mnote);$("fNext").classList.remove("hide");$("fNext").textContent=`Passe ${s.pass} ➜`;}
  else{s.errF+=1;s.seed=(s.seed||0);logEv(f,"forge-passe"+FG.pass,false);save();setTimeout(()=>SND.bad(),500);
-  $("fMsg").className="msg ko";$("fMsg").textContent=`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Les mots verts sont les bons. Regarde-les, puis recommence la passe.`;$("fAgain").classList.remove("hide");$("fAgain").textContent="🔁 Recommencer la passe";}}
+  $("fMsg").className="msg ko";$("fMsg").textContent=koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Les mots verts sont les bons. Regarde-les, puis recommence la passe.`);$("fAgain").classList.remove("hide");$("fAgain").textContent="🔁 Recommencer la passe";}}
 $("fGo").onclick=checkForge;
 $("fText").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();checkForge();}});
 $("fAgain").onclick=()=>{SND.click();renderForge();};
@@ -899,14 +1014,14 @@ function duelAnswer(timeout){if(DU.paused)return;DU.paused=true;clearInterval(DU
  $("dRes").innerHTML=resultHTML(res.ops);$("dRes").classList.remove("hide");$("dIn").classList.add("hide");$("dSym").classList.add("hide");$("dGo").classList.add("hide");$("dNext").classList.remove("hide");
  if(DU.mode==="boss"){
   if(ok){DU.hp--;DU.wins++;SND.hit();const g=GOLEMS[DU.wi];g.g.userData.shake=1;burst(g.g.position.clone().add(new V3(0,2.5,0)),0x9a9a9a,18);
-   $("dMsg").className="msg ok";$("dMsg").textContent=`💥 Touché ! Le gardien perd un bloc.${res.minor?" Attention aux petites fautes en orange.":""}`;logEv(f,"gardien",true);}
+   $("dMsg").className="msg ok";$("dMsg").textContent="💥 Touché !"+softNote(res)+` Le gardien perd un bloc.${res.minor?" Attention aux petites fautes en orange.":""}`;logEv(f,"gardien",true);}
   else{DU.hearts--;DU.fails++;SND.hurt();s.errB+=1;s.missBoss=(s.missBoss||0)+1;schedule(f,false);logEv(f,"gardien",false);
    DU.queue.splice(Math.min(1,DU.queue.length),0,f);
-   $("dMsg").className="msg ko";$("dMsg").textContent=(timeout?"⏰ Temps écoulé ! ":"")+`Tu perds un cœur. Les mots verts sont les bons. Cette fiche va revenir.`;}
+   $("dMsg").className="msg ko";$("dMsg").textContent=(timeout?"⏰ Temps écoulé ! ":koMsg(res,""))+`Tu perds un cœur. Les mots verts sont les bons. Cette fiche va revenir.`;}
   $("dHearts").textContent="❤️".repeat(Math.max(0,DU.hearts))+"🖤".repeat(3-Math.max(0,DU.hearts));$("dHP").firstElementChild.style.width=(DU.hp/DU.hpMax*100)+"%";$("dCount").textContent=`Gardien : ${DU.hp}/${DU.hpMax}`;
   if(DU.hearts<=0){$("dNext").textContent="Continuer ➜";DU.lost=true;}else{DU.lost=false;$("dNext").textContent=DU.hp<=0?"🏆 Victoire ➜":"Fiche suivante ➜";}}
- else{schedule(f,ok);logEv(f,"revision",ok);if(ok){SND.good();DU.wins++;$("dMsg").className="msg ok";$("dMsg").textContent=`Parfait ! Prochaine révision : ${frDate(FS(f).next)}.`;}
-  else{SND.bad();DU.fails++;s.errR+=1;save();if(!DU.done.has(f)){DU.done.add(f);DU.queue.push(f);}$("dMsg").className="msg ko";$("dMsg").textContent=`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Lis bien les mots verts. Elle revient à la fin, puis demain.`;}
+ else{schedule(f,ok);logEv(f,"revision",ok);if(ok){SND.good();DU.wins++;$("dMsg").className="msg ok";$("dMsg").textContent="Parfait !"+softNote(res)+` Prochaine révision : ${frDate(FS(f).next)}.`;}
+  else{SND.bad();DU.fails++;s.errR+=1;save();if(!DU.done.has(f)){DU.done.add(f);DU.queue.push(f);}$("dMsg").className="msg ko";$("dMsg").textContent=koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Lis bien les mots verts. Elle revient à la fin, puis demain.`);}
   $("dNext").textContent=DU.queue.length?"Fiche suivante ➜":"Terminer ➜";}
  save();updateHUD();}
 $("dGo").onclick=()=>{if(!$("dIn").value.trim()){$("dMsg").className="msg ko";$("dMsg").textContent="Tape la fiche d'abord.";return;}duelAnswer(false);};
@@ -960,7 +1075,7 @@ placePlayer(S.world);camFor(S.world);CAM.target.copy(islandCenter(S.world));CAM.
 updateHUD();requestAnimationFrame(loop);
 $("bPlay").onclick=()=>{AU.init();AU.resume();SND.good();$("title").classList.remove("on");$("hud").classList.remove("hide");started=true;CAM.auto=false;
  const ws=worldState(S.world);if(!ws.forged&&S.world===0)toast("⛏️ Touche une enclume pour forger ta première fiche.",4500);else if(dueList().length)toast(`🔁 ${dueList().length} fiche${dueList().length>1?"s":""} à réviser aujourd'hui.`,4000);};
-window.__fg={S:()=>S,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,
+window.__fg={S:()=>S,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,
  stationScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
  fps:()=>{const a=FPS.frames;return a.length?Math.round(a.length/a.reduce((x,y)=>x+y,0)):0;},player:()=>P.g.position.toArray(),pickAt:(x,y)=>{const h=pick(x,y,stationHits.concat(golemHits));const g=pick(x,y,groundMeshes);return {h:h&&h.object.userData,g:g&&g.point.toArray(),started,panelOpen};},groundScreen:(dx,dz)=>{const isl=ISL[S.world],x=isl.cx+dx,z=isl.cz+dz;return screenOf(new V3(x,groundY(x,z),z));},rails:()=>Object.keys(RAILS),calls:()=>renderer.info.render.calls};
 
