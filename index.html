@@ -201,6 +201,32 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
 .lnwhy{background:#e6f5e3;border:2px solid #3f9a3a;color:#1d3b1a;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:17px}
 .lnwhy b{display:block;margin-bottom:4px}
 #lnSel .schbox{pointer-events:auto}
+
+#lnRemind{position:fixed;inset:0;z-index:9000;background:rgba(15,15,20,.78);display:none;overflow:auto;padding:16px;-webkit-overflow-scrolling:touch}
+#lnRemind.on{display:block}
+.lnrmbox{max-width:640px}
+.lnrmdhd{display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
+.lnrmdhd .lnico{font-size:42px;line-height:1}
+.lnrmdhd b{font-size:22px;display:block}
+.lnrmsub{font-size:15px;opacity:.8;margin-top:2px}
+.lnrmdpair{display:flex;align-items:stretch;gap:8px;margin-top:10px}
+.lnrmdpair .lncard{flex:1;min-width:0;background:#fff;border:2px solid #c9b88a;border-radius:10px;padding:6px 8px}
+.lnrmarr{align-self:center;font-size:22px;font-weight:800;opacity:.7;flex:none}
+.lnricon{cursor:pointer}
+#lnMarks{position:absolute;inset:0;z-index:8;pointer-events:none}
+#hud #lnMarks{pointer-events:none}
+.lnmark{position:absolute;width:52px;height:52px;margin-left:-26px;margin-top:-26px;border:0;border-radius:50%;background:#fffdf5;box-shadow:0 0 0 3px #3a2710,0 3px 10px rgba(0,0,0,.45);font-size:28px;line-height:52px;text-align:center;padding:0;pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lnmark:focus{outline:3px solid #2f8f46}
+#lnBub{position:fixed;inset:0;z-index:9600;background:rgba(15,15,20,.6);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:16px;padding-top:max(16px,8vh);-webkit-overflow-scrolling:touch}
+#lnBub.on{display:flex}
+.lnbub{max-width:560px;width:100%;margin:0 auto;background:#fffdf5;color:#222;border-radius:16px;padding:16px 18px;font:17px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.lnbubt{display:flex;align-items:center;gap:8px;font-size:19px;margin:10px 0 6px}
+.lnbubx{margin:6px 0;font-weight:600}
+.lnbubr{background:#eef4ff;border:2px solid #2f7fc1;border-radius:10px;padding:8px 10px;margin:8px 0}
+.lnlist{display:flex;flex-direction:column;gap:8px}
+.lnw{margin:8px 0 2px}
+.lnrow{display:flex;gap:10px;align-items:flex-start;text-align:left;background:#fff;border:1px solid #e0d6bd;border-radius:10px;padding:8px 10px;font:16px/1.35 system-ui,-apple-system,sans-serif;cursor:pointer;width:100%;color:#222}
+.lnrow .lnico{font-size:28px;line-height:1;flex:none}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="hud" class="hide">
@@ -653,7 +679,7 @@ function ficheHTML(f){return esc(FICHES[f].txt).replace(/\{([^}]*)\}/g,'<span cl
 const SKEY="mineParCoeur_v1";
 let S;
 try{S=JSON.parse(localStorage.getItem(SKEY))||{}}catch(e){S={}}
-S.f=S.f||{};S.links=S.links||{};S.boss=S.boss||{};S.unlocked=S.unlocked||1;S.world=S.world||0;S.log=S.log||[];S.stats=S.stats||{badLinks:0};
+S.f=S.f||{};S.links=S.links||{};S.linkWhy=S.linkWhy||{};S.boss=S.boss||{};S.unlocked=S.unlocked||1;S.world=S.world||0;S.log=S.log||[];S.stats=S.stats||{badLinks:0};
 if(S.sound===undefined)S.sound=true;
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
 function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -951,10 +977,66 @@ const LIENS=(()=>{
  function selShow(f,F,extra){let d=document.getElementById("lnSel");if(!d){d=document.createElement("div");d.id="lnSel";document.body.appendChild(d);}
   d.innerHTML=card(f,F)+(extra?`<div class="lnsx">${extra}</div>`:"");d.classList.add("on");const sl=d.querySelector(".schslot");if(sl)sl._schT=performance.now();}
  function selHide(){const d=document.getElementById("lnSel");if(d)d.classList.remove("on");}
+ function mini(f){const F=typeof FICHES!=="undefined"?FICHES[f]:null;
+  return `<div class="lnmini"><span class="lnbadge ${F?F.t:""}">${F?F.t:""}${f}</span><b>${esc(SHORT[f]||"")}</b>${typeof SCH!=="undefined"&&SCH.has(f)?SCH.svg(f):""}</div>`;}
+ function typ(t){return TYPES[t]||TYPES.def;}
+ function reasonOf(key){if(typeof S==="undefined"||!S.linkWhy)return "";return String(S.linkWhy[key]||"").trim();}
+ function setReason(key,v){if(typeof S==="undefined")return;S.linkWhy=S.linkWhy||{};const t=String(v||"").trim();if(t)S.linkWhy[key]=t.slice(0,240);else delete S.linkWhy[key];}
+ function listHTML(kind){if(typeof LINKS==="undefined"||typeof S==="undefined")return "";
+  const done=LINKS.filter(L=>S.links[L.key]);if(!done.length)return "";
+  const title=kind==="voie"?"Tes voies":"Tes rails";
+  let html=`<h3>${title}</h3><div class="lnlist">`;
+  const worlds=typeof WORLDS!=="undefined"?WORLDS:null;
+  (worlds||[null]).forEach((w,i)=>{
+   const ls=worlds?done.filter(L=>L.w===i):done;if(!ls.length)return;
+   if(worlds)html+=`<p class="lnw"><b>${esc(w.name)}</b></p>`;
+   ls.forEach(L=>{const T=typ(L.t),r=reasonOf(L.key);
+    html+=`<button type="button" class="lnrow" data-lk="${L.key}"><span class="lnico">${T.icon}</span><div><b>${esc(SHORT[L.a])} et ${esc(SHORT[L.b])}</b><br>${esc(T.plain)}.<br>${esc(L.ex||"")}${r?`<br><i>Ta raison : ${esc(r)}</i>`:""}</div></button>`;});
+  });
+  return html+"</div>";}
+ function bindList(root){(root||document).querySelectorAll(".lnrow").forEach(b=>b.addEventListener("click",()=>{const L=typeof LINKS!=="undefined"&&LINKS.find(l=>l.key===b.dataset.lk);if(L)openBubble(L,reasonOf(L.key));}));}
+ /* bulle : pourquoi ce rail / cette voie */
+ function bubbleHTML(L,reason){const T=typ(L.t),r=String(reason||"").trim();
+  return `<div class="lnbub" role="dialog" aria-label="Pourquoi ces fiches vont ensemble">
+   <div class="lnexrow">${mini(L.a)}<svg class="lnrail" viewBox="0 0 80 40"><line x1="4" y1="14" x2="76" y2="14"/><line x1="4" y1="26" x2="76" y2="26"/></svg>${mini(L.b)}</div>
+   <p class="lnbubt"><span class="lnico">${T.icon}</span><b>${esc(T.plain)}</b></p>
+   <p class="lnbubx">${esc(L.ex||"")}</p>
+   ${r?`<p class="lnbubr"><b>Ta raison :</b> ${esc(r)}</p>`:""}
+   <div class="lnbtns"><button type="button" class="lnok" id="lnBubOk">Fermer</button></div></div>`;}
+ function openBubble(L,reason){let ov=document.getElementById("lnBub");if(!ov){ov=document.createElement("div");ov.id="lnBub";document.body.appendChild(ov);ov.addEventListener("click",e=>{if(e.target===ov)closeBubble();});}
+  ov.innerHTML=bubbleHTML(L,reason==null?reasonOf(L.key):reason);ov.classList.add("on");ov.scrollTop=0;const ok=document.getElementById("lnBubOk");if(ok)ok.onclick=()=>closeBubble();}
+ function closeBubble(){const ov=document.getElementById("lnBub");if(!ov||!ov.classList.contains("on"))return;ov.classList.remove("on");ov.innerHTML="";}
+ function isBubbleOpen(){const ov=document.getElementById("lnBub");return !!(ov&&ov.classList.contains("on"));}
+ /* pastilles sur la carte : icône au milieu du rail, écartées si elles se chevauchent */
+ const MARK=26;
+ function spread(pts,min){pts.forEach(p=>{p.ox=p.x;p.oy=p.y;});
+  for(let k=0;k<22;k++){for(const p of pts){p.x+=(p.ox-p.x)*.1;p.y+=(p.oy-p.y)*.1;}
+   for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[j].x-pts[i].x,dy=pts[j].y-pts[i].y,d=Math.hypot(dx,dy)||.01;
+    if(d<min){const push=(min-d)/2,ux=dx/d,uy=dy/d;pts[i].x-=ux*push;pts[i].y-=uy*push;pts[j].x+=ux*push;pts[j].y+=uy*push;}}}
+  for(const p of pts){const dx=p.x-p.ox,dy=p.y-p.oy,d=Math.hypot(dx,dy);if(d>96){p.x=p.ox+dx/d*96;p.y=p.oy+dy/d*96;}}
+  for(let k=0;k<10;k++){for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[j].x-pts[i].x,dy=pts[j].y-pts[i].y,d=Math.hypot(dx,dy)||.01;
+    if(d<min){const push=(min-d)/2,ux=dx/d,uy=dy/d;pts[i].x-=ux*push;pts[i].y-=uy*push;pts[j].x+=ux*push;pts[j].y+=uy*push;}}}
+  const Lft=MARK+8,Rgt=(typeof innerWidth==="number"?innerWidth:800)-MARK-8,Top=70,Bot=(typeof innerHeight==="number"?innerHeight:600)-96;
+  for(const p of pts){p.x=Math.max(Lft,Math.min(Rgt,p.x));p.y=Math.max(Top,Math.min(Bot,p.y));}
+  return pts;}
+ function marksHost(){let d=document.getElementById("lnMarks");if(!d){d=document.createElement("div");d.id="lnMarks";const h=document.getElementById("hud");(h||document.body).appendChild(d);}return d;}
+ function placeMarks(pts,onTap){const host=marksHost();
+  const vis=pts.filter(p=>p.x>-80&&p.y>-80&&p.x<(innerWidth||800)+80&&p.y<(innerHeight||600)+80);
+  spread(vis,58);
+  const have=new Map([...host.children].map(e=>[e.dataset.lk,e])),keep=new Set();
+  vis.forEach(p=>{keep.add(p.key);let e=have.get(p.key);
+   if(!e){e=document.createElement("button");e.type="button";e.className="lnmark";e.dataset.lk=p.key;
+    e.addEventListener("pointerdown",ev=>{ev.stopPropagation();});
+    e.addEventListener("click",ev=>{ev.preventDefault();ev.stopPropagation();if(onTap)onTap(p.key,p);});
+    host.appendChild(e);}
+   e.textContent=p.icon;e.setAttribute("aria-label",p.label||p.icon);e.style.left=Math.round(p.x)+"px";e.style.top=Math.round(p.y)+"px";});
+  [...host.children].forEach(e=>{if(!keep.has(e.dataset.lk))e.remove();});
+  window.__lnMarkRects=vis.map(p=>({key:p.key,icon:p.icon,l:p.x-MARK,r:p.x+MARK,t:p.y-MARK,b:p.y+MARK,x:p.x,y:p.y}));
+  return window.__lnMarkRects;}
+ function clearMarks(){const d=document.getElementById("lnMarks");if(d)d.innerHTML="";window.__lnMarkRects=[];}
  /* aide : à quoi sert un rail / une voie */
  function helpHTML(kind){const V=kind==="voie";const un=V?"une voie":"un rail",Un=V?"Une voie":"Un rail";
   const how=V?"Glisse ton doigt d'une station ouverte à une autre.":"Touche « 🛤️ Poser des rails », puis une fiche, puis une autre.";
-  const mini=f=>`<div class="lnmini"><span class="lnbadge ${FICHES[f].t}">${FICHES[f].t}${f}</span><b>${esc(SHORT[f])}</b>${typeof SCH!=="undefined"?SCH.svg(f):""}</div>`;
   return `<div class="lnbox"><h2>${V?"🚆 À quoi sert une voie ?":"🛤️ À quoi sert un rail ?"}</h2>
    <p>Tes fiches ne sont pas seules. Certaines vont ensemble.</p>
    <p><b>${Un} relie deux fiches quand l'une aide à comprendre ou à utiliser l'autre.</b></p>
@@ -962,15 +1044,23 @@ const LIENS=(()=>{
     <p class="lnexp">La fiche 3 explique le mot « bissectrice ». La fiche 4 utilise ce mot pour donner des mesures. Donc on les relie.</p></div>
    <h3>Les 4 sortes de liens</h3>
    <div class="lntypes">${Object.keys(TYPES).map(k=>`<div class="lnty1"><span class="lnico">${TYPES[k].icon}</span><div><b>${TYPES[k].plain}</b><br>${TYPES[k].why}<br><i>Exemple : ${TYPES[k].ex}</i></div></div>`).join("")}</div>
+   ${listHTML(kind)}
    <h3>Comment faire ?</h3>
-   <ol><li>${how}</li><li>Choisis la sorte de lien.</li><li>Dis pourquoi : tape un mot, ou dicte au micro 🎤.</li><li>Si les deux fiches ne vont pas ensemble, ${un} casse. Ce n'est pas grave : une piste t'aide.</li></ol>
+   <ol><li>${how}</li><li>Choisis la sorte de lien.</li><li>Dis pourquoi : tape un mot, ou dicte au micro 🎤.</li><li>Sur la carte, chaque ${un} déjà posé montre une icône. Touche-la pour revoir pourquoi les deux fiches vont ensemble.</li><li>Si les deux fiches ne vont pas ensemble, ${un} casse. Ce n'est pas grave : une piste t'aide.</li></ol>
    <div class="lnbtns"><button type="button" class="lnok" id="lnHelpOk">✔ J'ai compris</button></div></div>`;}
  let onDone=null;
- function openHelp(kind,cb){let ov=document.getElementById("lnHelp");if(!ov){ov=document.createElement("div");ov.id="lnHelp";document.body.appendChild(ov);}
-  onDone=cb||null;ov.innerHTML=helpHTML(kind);ov.classList.add("on");ov.scrollTop=0;document.getElementById("lnHelpOk").onclick=()=>closeHelp();}
+ function openHelp(kind,cb){closeBubble();let ov=document.getElementById("lnHelp");if(!ov){ov=document.createElement("div");ov.id="lnHelp";document.body.appendChild(ov);}
+  onDone=cb||null;ov.innerHTML=helpHTML(kind);ov.classList.add("on");ov.scrollTop=0;document.getElementById("lnHelpOk").onclick=()=>closeHelp();bindList(ov);}
  function closeHelp(){const ov=document.getElementById("lnHelp");if(!ov||!ov.classList.contains("on"))return;ov.classList.remove("on");ov.innerHTML="";const c=onDone;onDone=null;if(c)c();}
  function isHelpOpen(){const ov=document.getElementById("lnHelp");return !!(ov&&ov.classList.contains("on"));}
- return {SHORT,TYPES,EX,apply,q,match,badPair,partner,card,selShow,selHide,openHelp,closeHelp,isHelpOpen,N};
+ function badgeCanvas(t,sz){sz=sz||128;const c=document.createElement("canvas");c.width=sz;c.height=sz;const x=c.getContext("2d");
+  x.beginPath();x.arc(sz/2,sz/2,sz/2-4,0,Math.PI*2);x.fillStyle="#fffdf5";x.fill();x.lineWidth=7;x.strokeStyle="#3a2710";x.stroke();
+  x.font=(Math.round(sz*.56)+"px sans-serif");x.textAlign="center";x.textBaseline="middle";x.fillText(typ(t).icon,sz/2,sz/2+1);return c;}
+ function badgeSVG(t){const ic=typ(t).icon;
+  return `<circle r="36" fill="#fffdf5" stroke="#3a2710" stroke-width="4"/><text y="2" text-anchor="middle" dominant-baseline="middle" font-size="38">${ic}</text>`;}
+ function remindShow(L){openBubble(L,reasonOf(L&&L.key));}
+ function remindHide(){closeBubble();}
+ return {SHORT,TYPES,EX,apply,q,match,badPair,partner,card,selShow,selHide,openHelp,closeHelp,isHelpOpen,N,mini,typ,reasonOf,setReason,listHTML,bindList,openBubble,closeBubble,isBubbleOpen,placeMarks,clearMarks,spread,badgeCanvas,badgeSVG,remindShow,remindHide};
 })();
 
 /* ================= SCÈNE 3D ================= */
@@ -1192,7 +1282,8 @@ function loop(now){requestAnimationFrame(loop);try{declutter();}catch(_){}let dt
  clouds.forEach((c,i)=>{c.position.x+=dt*(.6+i%3*.2);if(c.position.x>260)c.position.x=-60;});
  for(const f in STN){const s=STN[f];if(s.beam.visible){s.beam.material.opacity=.28+Math.sin(t*3+ +f)*.08;s.item.position.y=2+Math.sin(t*2+ +f)*.12;}}
  for(const k in RAILS){const R=RAILS[k];R.tiles.forEach(m=>{if(m.userData.drop){m.position.y-=dt*4;const gy=groundY(m.position.x,m.position.z)+.04;if(m.position.y<=gy){m.position.y=gy;m.userData.drop=0;}}});
-  if(R.powered){R.sparks.forEach(s=>{s.userData.u=(s.userData.u+dt*.35)%1;const n=R.pts.length-1,fi=s.userData.u*n,i0=Math.floor(fi),fr=fi-i0,a=R.pts[i0],b=R.pts[Math.min(n,i0+1)];s.position.set(a.x+(b.x-a.x)*fr,a.y+(b.y-a.y)*fr+.18+Math.abs(Math.sin(t*10))*.05,a.z+(b.z-a.z)*fr);s.rotation.y+=dt*5;});}}
+  if(R.powered){R.sparks.forEach(s=>{s.userData.u=(s.userData.u+dt*.35)%1;const n=R.pts.length-1,fi=s.userData.u*n,i0=Math.floor(fi),fr=fi-i0,a=R.pts[i0],b=R.pts[Math.min(n,i0+1)];s.position.set(a.x+(b.x-a.x)*fr,a.y+(b.y-a.y)*fr+.18+Math.abs(Math.sin(t*10))*.05,a.z+(b.z-a.z)*fr);s.rotation.y+=dt*5;});
+}}
  railOnM.emissiveIntensity=.55+Math.sin(t*5)*.35;
  for(let i=FALLING.length-1;i>=0;i--){const F=FALLING[i];F.t+=dt;F.tiles.forEach(m=>{m.userData.v.y-=12*dt;m.position.addScaledVector(m.userData.v,dt);m.rotation.x+=m.userData.r*dt;});if(F.t>1.4){scene.remove(F.g);FALLING.splice(i,1);}}
  for(let i=PARTS.length-1;i>=0;i--){const p=PARTS[i];p.userData.life-=dt;p.userData.v.y-=9*dt;p.position.addScaledVector(p.userData.v,dt);if(p.userData.life<=0){scene.remove(p);PARTS.splice(i,1);}}
@@ -1215,6 +1306,7 @@ function loop(now){requestAnimationFrame(loop);try{declutter();}catch(_){}let dt
  camera.position.set(CAM.target.x+CAM.dist*Math.sin(CAM.phi)*Math.sin(CAM.theta),CAM.target.y+CAM.dist*Math.cos(CAM.phi),CAM.target.z+CAM.dist*Math.sin(CAM.phi)*Math.cos(CAM.theta));
  camera.lookAt(CAM.target);
  renderer.render(scene,camera);
+ try{if(typeof updateRailMarks==="function")updateRailMarks();}catch(_){}
 }
 
 /* ================= VOIX : réciter au micro, et « Papa écoute » (partagé entre les jeux) =================
@@ -1355,9 +1447,20 @@ $("bInv").onclick=()=>{SND.click();openInv()};
 $("bPar").onclick=()=>{SND.click();openGate()};
 /* ---------- tap dans le monde ---------- */
 function clearSel(){if(railSel){STN[railSel].sign.scale.set(SIGNW,SIGNH,1);}railSel=null;if(typeof LIENS!=="undefined")LIENS.selHide();}
-function onTap(x,y){if(panelOpen||!started)return;
+function distSeg(x,y,x1,y1,x2,y2){const vx=x2-x1,vy=y2-y1,l=vx*vx+vy*vy||1;let u=((x-x1)*vx+(y-y1)*vy)/l;u=Math.max(0,Math.min(1,u));return Math.hypot(x-(x1+vx*u),y-(y1+vy*u));}
+function railAt(x,y){let best=null,bd=34;for(const k in RAILS){const R=RAILS[k];if(!R.powered)continue;const L=LINKS.find(l=>l.key===k);if(!L||L.w!==S.world)continue;
+  for(let i=0;i<R.pts.length-1;i++){const a=screenOf(R.pts[i]),b=screenOf(R.pts[i+1]);const d=distSeg(x,y,a[0],a[1],b[0],b[1]);if(d<bd){bd=d;best=L;}}}return best;}
+function openRailBubble(L){if(!L)return;SND.click();LIENS.openBubble(L,LIENS.reasonOf(L.key));}
+function updateRailMarks(){const hide=!started||panelOpen||LIENS.isHelpOpen()||LIENS.isBubbleOpen()||($("title")&&$("title").classList.contains("on"));
+ if(hide){LIENS.placeMarks([],null);return;}
+ const pts=[];for(const k in RAILS){const R=RAILS[k];if(!R.powered)continue;const L=LINKS.find(l=>l.key===k);if(!L||L.w!==S.world)continue;
+  const mid=R.pts[Math.floor(R.pts.length/2)].clone();mid.y+=.75;const s=screenOf(mid);const T=LIENS.TYPES[L.t];
+  pts.push({key:k,icon:T.icon,x:s[0],y:s[1],label:T.plain+" : "+(LIENS.SHORT[L.a]||"")+" et "+(LIENS.SHORT[L.b]||"")});}
+ LIENS.placeMarks(pts,key=>{const L=LINKS.find(l=>l.key===key);openRailBubble(L);});}
+function onTap(x,y){if(panelOpen||!started||LIENS.isBubbleOpen()||LIENS.isHelpOpen())return;
  const h=pick(x,y,stationHits.concat(golemHits));
  if(h){if(h.object.userData.fiche)return tapStation(h.object.userData.fiche);if(h.object.userData.golem!==undefined)return tapGolem(h.object.userData.golem);}
+ if(!railSel){const L=railAt(x,y);if(L)return openRailBubble(L);}
  const g=pick(x,y,groundMeshes);if(!g||railMode)return;const isl=ISL[S.world];
  if(Math.hypot(g.point.x-isl.cx,g.point.z-isl.cz)<isl.R-1&&HM.has(hk(Math.round(g.point.x),Math.round(g.point.z))))walkTo(g.point.x,g.point.z);}
 function tapStation(f){const wi=FW[f];if(wi!==S.world)return;const ws=worldState(wi);
@@ -1379,7 +1482,7 @@ function railTap(f){if(!FS(f).forged){SND.bad();return toast(`Forge d'abord la f
  setTimeout(()=>{if(!L){removeRails(R.key,true);SND.breakR();S.stats.badLinks++;save();toast(`💥 Les rails cassent. `+LIENS.badPair(a,b,LINKS.filter(l=>l.w===FW[a]),l=>!!S.links[l.key],x=>FS(x).forged),7000);}
   else openLink(L);},dur);}
 function chip(f){return `<button class="chip" data-peek="${f}"><span class="badge ${FICHES[f].t}">${FICHES[f].t}${f}</span>${esc(FICHES[f].title)}</button>`;}
-function openLink(L){LK={L,step:1,done:false,wrong:0};
+function openLink(L){if(typeof LIENS!=="undefined")LIENS.remindHide();LK={L,step:1,done:false,wrong:0};
  $("lkPair").innerHTML=chip(L.a)+" <b style='font-size:22px'>➜</b> "+chip(L.b)+"<p style='font-size:14px;opacity:.85'>Touche une fiche pour la relire.</p>";
  $("lkPeek").innerHTML="";$("lkSlot").className="slot";$("lkSlot").innerHTML="Pose un bloc ici";
  $("lkStep2").classList.add("hide");$("lkWhy").classList.add("hide");$("lkIn").value="";$("lkMsg").textContent="";$("lkMsg").className="msg";
@@ -1405,11 +1508,11 @@ function labelDrop(el){const t=el.dataset.t,L=LK.L;
 const kwNorm=s=>stripAcc(String(s).toLowerCase()).replace(/[-']/g," ").replace(/[^a-z0-9° ]/g," ").replace(/\s+/g," ").trim();
 function linkAnswer(v){return LIENS.match(v,LK.L);}
 $("lkOk").onclick=()=>{if(!LK||LK.step!==2)return;const v=$("lkIn").value;
- if(linkAnswer(v)){const L=LK.L;LK.done=true;LK.step=3;S.links[L.key]=today();save();powerRails(L.key,true);SND.good();
+ if(linkAnswer(v)){const L=LK.L;LK.done=true;LK.step=3;S.links[L.key]=today();LIENS.setReason(L.key,v);save();powerRails(L.key,true);SND.good();
   $("lkStep2").classList.add("hide");$("lkMsg").textContent="";$("lkWhyT").innerHTML=`<b>✅ Bien vu ! Voici le lien :</b>${esc(L.ex||"")}`;$("lkWhy").classList.remove("hide");}
  else{SND.bad();LK.wrong++;$("lkMsg").className="msg ko";$("lkMsg").textContent="Ce n'est pas ça. Relis les deux fiches, puis réessaie."+(LK.wrong>=2?" Regarde le mot qui revient dans les deux fiches.":"");}};
 $("lkDone").onclick=()=>{if(!LK||!LK.done)return;const L=LK.L;SND.click();closePanel("link");
- const ws=worldState(L.w);toast(`⚡ Réseau alimenté ! Liens ${ws.links}/${ws.nl}`);updateHUD();
+ const ws=worldState(L.w);toast(`⚡ Réseau alimenté ! Liens ${ws.links}/${ws.nl}. Touche l'icône sur le rail pour revoir le lien.`);updateHUD();
  if(ws.awake&&!ws.beaten)setTimeout(()=>{SND.wake();refreshGolem(L.w);GOLEMS[L.w].g.userData.shake=1;pop("⚔️ Le gardien se réveille !","<p>Le réseau est complet. Le gardien de ce monde veut te tester.</p><p>Il te donne le titre ou le début d'une fiche. Tu dois taper toute la fiche avant la fin du temps. Tu as 3 cœurs.</p>",[{t:"⚔️ Combattre",fn:()=>startBoss(L.w)},{t:"Plus tard",cls:""}]);},900);};
 $("lkIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("lkOk").click();}});
 function linkClosed(){if(LK&&!LK.done){removeRails(LK.L.key,true);}LK=null;}
@@ -1558,16 +1661,17 @@ function renderParent(){const due=dueList();
  const RN={nonsu:"Non su",difficile:"Difficile",parcoeur:"Par cœur"};
  const tr=rows.map(f=>{const s=FS(f),w=WORLDS[FW[f]],pn=s.papa.length?s.papa[s.papa.length-1]:null;
   return `<tr><td><b>${f}</b> <span class="badge ${FICHES[f].t}" style="height:22px;min-width:22px;font-size:12px">${FICHES[f].t}</span> ${esc(FICHES[f].title)}<br><button class="mc" data-txt="${f}">📜 Texte</button></td><td style="color:${w.css};font-weight:800">${esc(w.name)}</td><td>${lv(s)}</td><td>${s.forged?(s.next<=today()?"<b>Aujourd'hui</b>":frDate(s.next)):"·"}</td><td>${s.errF}/${s.errB}/${s.errR}${s.minor?` <small>(${s.minor} accents)</small>`:""}</td><td>${frDate(s.last)}</td><td>${pn?`<span class="k-${pn.k}">${RN[pn.k]}</span> ${frDate(pn.d)}<br><small>${s.papa.length} note${s.papa.length>1?"s":""}</small>`:"·"}</td><td><button class="mc red" data-n="${f}" data-k="nonsu">Non su</button><button class="mc gold" data-n="${f}" data-k="difficile">Difficile</button><button class="mc green" data-n="${f}" data-k="parcoeur">Par cœur</button></td></tr><tr class="hide" id="ptx${f}"><td colspan="8"><div class="ftext">${ficheHTML(f)}</div></td></tr>`;}).join("");
- const net=WORLDS.map((w,i)=>`<b style="color:${w.css}">${esc(w.name)}</b> : `+LINKS.filter(l=>l.w===i).map(l=>`${S.links[l.key]?"⚡":"·"} ${l.a}➜${l.b} (${LTYPES[l.t].name.replace(/^\S+ /,"")})`).join(", ")).join("<br>");
+  const net=LIENS.listHTML("rail")||`<p>Aucun rail posé pour l'instant.</p>`;
  $("pBody").innerHTML=`<p>Après une récitation orale, choisissez une note. Elle change la date de la prochaine révision : Non su revient demain, Difficile dans 3 jours, Par cœur de plus en plus tard (7, 14, 28 jours).</p>
  <div class="sum">${sum}<div>🔁 À réviser aujourd'hui<br><span class="big1">${due.length}</span><br>${due.map(f=>"fiche "+f).join(", ")||"rien"}</div><div>Rails cassés (mauvais liens)<br><span class="big1">${S.stats.badLinks||0}</span></div></div>
  <div class="row"><button class="mc ${PSORT==="weak"?"gold":""}" id="pSortW">Les moins sues d'abord</button><button class="mc ${PSORT==="num"?"gold":""}" id="pSortN">Par numéro</button></div>
  <p style="font-size:14px">Erreurs = passes de forge ratées / duels ratés / révisions ratées.</p>
  <div style="overflow-x:auto"><table class="pt"><tr><th>Fiche</th><th>Monde</th><th>Maîtrise</th><th>Prochaine révision</th><th>Erreurs</th><th>Dernière fois</th><th>Note de papa</th><th>Noter la récitation</th></tr>${tr}</table></div>
- <h2 style="margin-top:14px">🛤️ Réseau</h2><p style="font-size:14px">${net}</p>
+ <h2 style="margin-top:14px">🛤️ Les rails</h2>${net}
  <div class="row"><button class="mc" id="pUnlock">Ouvrir tous les mondes</button><button class="mc red" id="pReset">Tout effacer</button></div>`;
  $("pBody").querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{const f=+b.dataset.n;papaNote(f,b.dataset.k);SND.papa();renderParent();updateHUD();toast(`Note enregistrée pour la fiche ${f}. Prochaine révision : ${frDate(FS(f).next)}.`);});
  $("pBody").querySelectorAll("[data-txt]").forEach(b=>b.onclick=()=>$("ptx"+b.dataset.txt).classList.toggle("hide"));
+ LIENS.bindList($("pBody"));
  $("pSortW").onclick=()=>{PSORT="weak";renderParent()};$("pSortN").onclick=()=>{PSORT="num";renderParent()};
  $("pUnlock").onclick=()=>{S.unlocked=WORLDS.length;save();GOLEMS.forEach((_,i)=>refreshGolem(i));updateHUD();renderParent();toast("Tous les mondes sont ouverts.");};
  $("pReset").onclick=()=>{closePanel("parent");pop("Tout effacer ?","<p>Toute la progression sera perdue : fiches forgées, réseau, gardiens, notes.</p>",[{t:"Oui, tout effacer",cls:"red",fn:()=>{localStorage.removeItem(SKEY);location.reload();}},{t:"Annuler",cls:""}]);};}
@@ -1579,9 +1683,13 @@ placePlayer(S.world);camFor(S.world);CAM.target.copy(islandCenter(S.world));CAM.
 updateHUD();requestAnimationFrame(loop);
 $("bPlay").onclick=()=>{IOSAU.unlock();SND.good();$("title").classList.remove("on");$("hud").classList.remove("hide");started=true;CAM.auto=false;
  const ws=worldState(S.world);if(!ws.forged&&S.world===0)toast("⛏️ Touche une enclume pour forger ta première fiche.",4500);else if(dueList().length)toast(`🔁 ${dueList().length} fiche${dueList().length>1?"s":""} à réviser aujourd'hui.`,4000);};
-window.__fg={LIENS,railMode:()=>railMode,S:()=>S,FS,nextRound,renderForge,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,
+window.__fg={LIENS,railMode:()=>railMode,S:()=>S,FS,nextRound,renderForge,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,railAt,updateRailMarks,openRailBubble,
  stationScreen:f=>{const r=FW[f]===S.world&&(window.__signRects||[]).find(r=>r.f===f);return r?[(r.l+r.r)/2,(r.t+r.b)/2]:screenOf(STN[f].pos.clone().add(new V3(0,1.2,0)));},anvilScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
- fps:()=>{const a=FPS.frames;return a.length?Math.round(a.length/a.reduce((x,y)=>x+y,0)):0;},player:()=>P.g.position.toArray(),pickAt:(x,y)=>{const h=pick(x,y,stationHits.concat(golemHits));const g=pick(x,y,groundMeshes);return {h:h&&h.object.userData,g:g&&g.point.toArray(),started,panelOpen};},groundScreen:(dx,dz)=>{const isl=ISL[S.world],x=isl.cx+dx,z=isl.cz+dz;return screenOf(new V3(x,groundY(x,z),z));},rails:()=>Object.keys(RAILS),calls:()=>renderer.info.render.calls};
+ fps:()=>{const a=FPS.frames;return a.length?Math.round(a.length/a.reduce((x,y)=>x+y,0)):0;},player:()=>P.g.position.toArray(),pickAt:(x,y)=>{const h=pick(x,y,stationHits.concat(golemHits));const g=pick(x,y,groundMeshes);return {h:h&&h.object.userData,g:g&&g.point.toArray(),started,panelOpen};},groundScreen:(dx,dz)=>{const isl=ISL[S.world],x=isl.cx+dx,z=isl.cz+dz;return screenOf(new V3(x,groundY(x,z),z));},rails:()=>Object.keys(RAILS),railIcons:()=>Object.keys(RAILS).filter(k=>RAILS[k].powered).map(k=>({key:k,t:(LINKS.find(l=>l.key===k)||{}).t})),
+ iconScreen:key=>{const m=(window.__lnMarkRects||[]).find(r=>r.key===key);return m?[m.x,m.y]:null;},
+ focusRail:key=>{const R=RAILS[key];if(!R)return false;const mid=R.pts[Math.floor(R.pts.length/2)].clone();mid.y+=.75;CAM.auto=false;CAM.fly=0;CAM.tTarget.copy(mid);CAM.target.copy(mid);CAM.tDist=14;CAM.dist=14;CAM.phi=1.02;CAM.theta=.55;
+  camera.position.set(CAM.target.x+CAM.dist*Math.sin(CAM.phi)*Math.sin(CAM.theta),CAM.target.y+CAM.dist*Math.cos(CAM.phi),CAM.target.z+CAM.dist*Math.sin(CAM.phi)*Math.cos(CAM.theta));camera.lookAt(CAM.target);renderer.render(scene,camera);if(typeof updateRailMarks==="function")updateRailMarks();return true;},
+ layRails,calls:()=>renderer.info.render.calls};
 
 /* ---- micro et Papa écoute ---- */
 VOIX.attach("forge",{field:$("fText"),anchor:$("fTyping"),fiche:()=>FG.f,papaOK:()=>FG.practice||FG.pass===4,canRedo:()=>!FG.practice,
@@ -1594,14 +1702,7 @@ VOIX.attach("duel",{field:$("dIn"),fiche:()=>DU.cur,canRedo:()=>false,
 VOIX.attach("link",{field:$("lkIn"),fiche:()=>null,papaOK:()=>false,canRedo:()=>false,papa:()=>{}});
 window.__voix=VOIX;
 
-</script>
-
-
-
-
-
-
-<!--CLAVIER--><style>/* CLAVIER iPad : mode « clavier ouvert » */
+</script><!--CLAVIER--><style>/* CLAVIER iPad : mode « clavier ouvert » */
 html.kb-on,html.kb-on body{overflow:hidden!important;overscroll-behavior:none}
 html.kb-on .kb-panel{z-index:9990!important}
 html.kb-on .kb-panel .schslot{max-height:calc(var(--kbh) * .22)!important;overflow:hidden}
