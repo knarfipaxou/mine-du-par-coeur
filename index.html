@@ -154,12 +154,59 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
 .vxfiche{background:#fff;border:2px solid #5fae55;border-radius:10px;padding:12px;line-height:1.5;margin:8px 0}
 .vxopt{opacity:.6}
 .vxg1{background:#c9f2c0;border-color:#2c7a22}.vxg2{background:#ffe2b8;border-color:#e08a1e}.vxg3{background:#ffd0d0;border-color:#b23030}
+
+.schslot{display:flex;justify-content:center;margin:4px 0}
+.schslot.schhide{display:none}
+.schbox{position:relative;display:inline-block;padding:2px;margin:0;border:2px solid #c9b88a;background:#fffdf4;border-radius:12px;cursor:zoom-in;line-height:0;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.schbox .schsvg{display:block;height:clamp(90px,20vh,170px);width:auto;max-width:100%;pointer-events:none}
+@media (max-height:700px){.schbox .schsvg{height:clamp(64px,14vh,110px)}}
+.schz{position:absolute;right:4px;bottom:4px;font-size:13px;line-height:1;opacity:.8;pointer-events:none}
+.vxcard .schslot{margin:8px 0}
+.vxcard .schbox .schsvg{height:clamp(110px,26vh,220px)}
+#schOv{position:fixed;inset:0;z-index:100000;background:rgba(10,10,14,.86);display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;cursor:zoom-out}
+#schOv.on{display:flex}
+#schOv .schbig{background:#fffdf4;border-radius:16px;padding:8px;line-height:0}
+#schOv .schsvg{display:block;width:min(92vw,120vh);height:auto;max-height:82vh}
+#schOv p{color:#fff;margin:0;font:600 17px system-ui,sans-serif}
+.schbox.schbp,#schOv .schbig.bp{background:#1d4f86;border-color:#6d9bd0}
+.schbox.schbp .schsvg{height:clamp(110px,25vh,210px)}
+@media (max-height:700px){.schbox.schbp .schsvg{height:clamp(70px,16vh,120px)}}
+
+#lnHelp{position:fixed;inset:0;z-index:9500;background:rgba(15,15,20,.88);display:none;overflow:auto;padding:16px;-webkit-overflow-scrolling:touch}
+#lnHelp.on{display:block}
+.lnbox{max-width:760px;margin:0 auto;background:#fffdf5;color:#222;border-radius:16px;padding:18px 20px;font:17px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.lnbox h2{margin:0 0 8px;font-size:24px}.lnbox h3{margin:14px 0 6px;font-size:19px}.lnbox p{margin:6px 0}.lnbox ol{margin:4px 0 4px 22px;padding:0}.lnbox li{margin:3px 0}
+.lnex{background:#f1ebdc;border-radius:12px;padding:10px;margin:10px 0}
+.lnexrow{display:flex;align-items:center;justify-content:center;gap:6px}
+.lnmini{display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:2px solid #c9b88a;border-radius:10px;padding:6px;width:min(38%,220px);font-size:15px;text-align:center}
+.lnmini svg{width:100%;height:auto;display:block}
+.lnrail{width:min(18%,110px);height:auto;flex:none}
+.lnrail line{stroke:#7a7a7a;stroke-width:3}
+.lnrail rect{fill:#8a5a2b;opacity:0;animation:lnTie 3.2s infinite}
+@keyframes lnTie{0%{opacity:0}12%{opacity:1}85%{opacity:1}100%{opacity:0}}
+.lnexp{text-align:center;font-weight:600;opacity:0;animation:lnFade 3.2s infinite;animation-delay:1.6s}
+@keyframes lnFade{0%{opacity:0}15%{opacity:1}90%{opacity:1}100%{opacity:1}}
+.lntypes{display:flex;flex-direction:column;gap:8px}
+.lnty1{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e0d6bd;border-radius:10px;padding:8px 10px}
+.lnico{font-size:30px;line-height:1}
+.lnbtns{display:flex;justify-content:center;margin-top:12px}
+.lnok{font:700 19px system-ui,sans-serif;padding:12px 22px;border-radius:12px;border:0;background:#2f8f46;color:#fff;cursor:pointer}
+.lnbadge{display:inline-block;min-width:34px;padding:2px 6px;border-radius:6px;color:#fff;font-weight:900;text-align:center;background:#666;margin-right:6px}
+.lnbadge.D{background:#3f9a3a}.lnbadge.P{background:#c8473b}
+#lnSel{position:fixed;left:10px;top:64px;pointer-events:none;z-index:60;display:none;max-width:min(330px,60vw);background:#fffdf5;color:#222;border:3px solid #c9b88a;border-radius:12px;padding:8px 10px;font:15px/1.3 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+#lnSel.on{display:block}
+.lncard .lnct{display:flex;align-items:center;font-size:17px}.lnty{font-size:13px;opacity:.75;margin:2px 0 4px}
+.lncard .schbox .schsvg{height:clamp(70px,13vh,110px)}
+.lnsx{font-size:14px;margin-top:4px}
+.lnwhy{background:#e6f5e3;border:2px solid #3f9a3a;color:#1d3b1a;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:17px}
+.lnwhy b{display:block;margin-bottom:4px}
+#lnSel .schbox{pointer-events:auto}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="hud" class="hide">
  <div id="topL"><button id="wPrev" class="mc" aria-label="Monde précédent">◀</button><div id="wChip"><b id="wName"></b><small id="wSub"></small></div><button id="wNext" class="mc" aria-label="Monde suivant">▶</button></div>
  <div id="topR"><button id="bRev" class="mc gold hide">🔁 Révision<i id="revN">0</i></button><button id="bInv" class="mc">🎒 Coffre</button><button id="bSnd" class="mc">🔊</button><button id="bPar" class="mc">🔒 Parent</button></div>
- <div id="bottom"><div id="stat"></div><div id="modeBtns"><button id="bRails" class="mc">🛤️ Poser des rails</button><button id="bHint" class="mc hide">💡 Indice</button><button id="bDuel" class="mc gold hide">⚔️ Défier le gardien</button></div></div>
+ <div id="bottom"><div id="stat"></div><div id="modeBtns"><button id="bRails" class="mc">🛤️ Poser des rails</button><button id="bRHelp" class="mc">❓ Les rails</button><button id="bHint" class="mc hide">💡 Indice</button><button id="bDuel" class="mc gold hide">⚔️ Défier le gardien</button></div></div>
  <div id="toast"></div>
 </div>
 <div id="title" class="ov on">
@@ -173,6 +220,7 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
  <h2><span id="fBadge" class="badge"></span><span id="fTitle"></span></h2>
  <div class="passes" id="fPasses"></div>
  <p id="fInstr"></p>
+ <div id="fSch" class="schslot schhide"></div>
  <div class="board" id="fBoard"></div>
  <div id="fTyping"><textarea id="fText" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tape la fiche ici…"></textarea></div>
  <div class="symbar" id="fSym"></div>
@@ -181,13 +229,14 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
 </div>
 <div id="link" class="panel">
  <button class="mc xbtn" data-close="link">✖</button>
- <h2>🛤️ Nouveau lien</h2>
+ <h2>🛤️ Nouveau lien <button type="button" class="mc" id="lkHelp" style="font-size:15px;padding:4px 10px;vertical-align:middle">❓ Aide</button></h2>
  <div id="lkPair"></div>
  <div id="lkPeek"></div>
- <p><b>1.</b> Quel genre de lien ? Glisse le bon bloc sur les rails.</p>
+ <p><b>1.</b> Quelle sorte de lien ? Glisse le bon bloc sur les rails.</p>
  <div class="slot" id="lkSlot">Pose un bloc ici</div>
  <div class="lbls" id="lkLabels"></div>
  <div id="lkStep2" class="hide"><p><b>2.</b> <span id="lkQ"></span></p><input id="lkIn" class="txt" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="row"><button id="lkOk" class="mc gold">⚡ Alimenter le réseau</button></div></div>
+ <div id="lkWhy" class="hide"><div class="lnwhy" id="lkWhyT"></div><div class="row"><button id="lkDone" class="mc green">Continuer ➜</button></div></div>
  <div class="msg" id="lkMsg"></div>
 </div>
 <div id="duel" class="panel">
@@ -195,6 +244,7 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
  <h2 id="dHead"></h2>
  <div id="dTop"><span class="hearts" id="dHearts"></span><div class="hp" id="dHP"><i></i></div><span id="dCount"></span></div>
  <div class="bubble" id="dBubble"></div>
+ <div id="dSch" class="schslot schhide"></div>
  <div class="tbar" id="dTime"><i></i></div>
  <textarea id="dIn" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tape toute la fiche…"></textarea>
  <div class="symbar" id="dSym"></div>
@@ -749,6 +799,180 @@ function setCssTex(){const rs=document.documentElement.style;const u=c=>{const b
  rs.setProperty("--tex-stone",u(TX.stone));rs.setProperty("--tex-gold",u(TX.gold));rs.setProperty("--tex-iron",u(TX.iron));rs.setProperty("--tex-grass",u(TX.grassTop));rs.setProperty("--tex-red",u(TX.redGlow));rs.setProperty("--tex-plank",u(TX.plank));rs.setProperty("--tex-crack",u(TX.crack));rs.setProperty("--tex-rail",u(TX.rail));}
 setCssTex();
 
+/* ================= SCHÉMAS : la figure de chaque fiche, visible pendant la récitation (partagé entre les jeux) =================
+   Mêmes lettres que le cahier. Arcs, codages, angle droit, parallèles. Aucun mot de la réponse dans la figure.
+   SCH.box(f) : petite figure touchable (ou "" si la fiche n'a pas de figure). SCH.mount(el,f) : la place dans el.
+   Toucher la figure l'agrandit en plein écran ; toucher encore la ferme. */
+const SCH=(()=>{
+ const RD=Math.PI/180,INK="#222",BLUE="#1f6fd1",ORANGE="#e0761b",GREEN="#239150",RED="#cf3434";
+ const n1=v=>(Math.round(v*10)/10).toString();
+ const P=(c,a,r)=>[c[0]+r*Math.cos(a*RD),c[1]-r*Math.sin(a*RD)];
+ const dir=(c,p)=>Math.atan2(c[1]-p[1],p[0]-c[0])/RD;
+ const L=(a,b,w,col,dash)=>`<line x1="${n1(a[0])}" y1="${n1(a[1])}" x2="${n1(b[0])}" y2="${n1(b[1])}" stroke="${col||INK}" stroke-width="${w||2.4}" stroke-linecap="round"${dash?` stroke-dasharray="${dash}"`:""}/>`;
+ const dot=p=>`<circle cx="${n1(p[0])}" cy="${n1(p[1])}" r="2.8" fill="${INK}"/>`;
+ const T=(p,t,o)=>{o=o||{};return `<text x="${n1(p[0])}" y="${n1(p[1])}" font-family="Georgia,serif" font-size="${o.s||16}" font-weight="bold" ${o.it?'font-style="italic" ':''}fill="${o.c||INK}" text-anchor="middle" dominant-baseline="central">${t}</text>`;};
+ const lab=(p,a,t,r)=>T(P(p,a,r||12),t);           /* lettre posée à côté d'un point, dans la direction a */
+ /* arc dans le sens inverse des aiguilles, de a1 à a2 (degrés, repère maths) */
+ const arc=(c,a1,a2,r,col,w,dash)=>{const s=P(c,a1,r),e=P(c,a2,r),d=((a2-a1)%360+360)%360;
+  return `<path d="M${n1(s[0])} ${n1(s[1])} A${r} ${r} 0 ${d>180?1:0} 0 ${n1(e[0])} ${n1(e[1])}" fill="none" stroke="${col}" stroke-width="${w||2.6}"${dash?` stroke-dasharray="${dash}"`:""}/>`;};
+ const span=(c,p1,p2)=>{const a=dir(c,p1),b=dir(c,p2),d=((b-a)%360+360)%360;return d<=180?[a,a+d]:[b,b+360-d];};
+ const ticks=(c,a,r,n,col)=>{let s="";const st=5.5/r/RD;for(let k=0;k<n;k++){const m=a+(k-(n-1)/2)*st;s+=L(P(c,m,r-5),P(c,m,r+5),2,col);}return s;};
+ /* angle intérieur au sommet c entre les directions de p1 et p2, avec n traits de codage */
+ const ang=(c,p1,p2,r,col,n)=>{const [a,b]=span(c,p1,p2);return arc(c,a,b,r,col)+(n?ticks(c,(a+b)/2,r,n,col):"");};
+ const angD=(c,d1,d2,r,col,n)=>{const d=((d2-d1)%360+360)%360;return arc(c,d1,d1+d,r,col)+(n?ticks(c,d1+d/2,r,n,col):"");};
+ const segT=(A,B,n)=>{const m=[(A[0]+B[0])/2,(A[1]+B[1])/2],a=dir(A,B);let s="";for(let k=0;k<n;k++){const q=P(m,a,(k-(n-1)/2)*5);s+=L(P(q,a+90,6),P(q,a-90,6),2);}return s;};
+ const square=(c,a1,a2,z)=>{const p=P(c,a1,z),q=P(c,a2,z),m=[p[0]+q[0]-c[0],p[1]+q[1]-c[1]];return `<path d="M${n1(p[0])} ${n1(p[1])} L${n1(m[0])} ${n1(m[1])} L${n1(q[0])} ${n1(q[1])}" fill="none" stroke="${RED}" stroke-width="2.2"/>`;};
+ const chev=(p,a,col)=>{const t=P(p,a,4),l=P(p,a+150,7),r=P(p,a-150,7);return `<path d="M${n1(l[0])} ${n1(l[1])} L${n1(t[0])} ${n1(t[1])} L${n1(r[0])} ${n1(r[1])}" fill="none" stroke="${col||INK}" stroke-width="2.2" stroke-linecap="round"/>`;};
+ const inter=(a,b,c,d)=>{const x1=a[0],y1=a[1],x2=b[0],y2=b[1],x3=c[0],y3=c[1],x4=d[0],y4=d[1],den=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4),t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/den;return [x1+t*(x2-x1),y1+t*(y2-y1)];};
+ const wrap=b=>`<svg class="schsvg" viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Figure de la fiche"><rect x="0" y="0" width="240" height="160" rx="10" fill="#fffdf4"/>${b}</svg>`;
+
+ /* --- fiches 1 et 2 : angles adjacents AOB et BOC --- */
+ function adj(sum){const O=[38,138],A=P(O,6,180),B=P(O,46,150),C=P(O,98,118);
+  return L(O,A)+L(O,B)+L(O,C)+(sum?arc(O,6,98,58,GREEN,2.4,"6 4"):"")+arc(O,6,46,32,BLUE)+arc(O,46,98,26,ORANGE)+dot(O)+lab(O,232,"O",14)+lab(A,90,"A")+lab(B,90,"B",13)+lab(C,0,"C",13);}
+ /* --- fiches 3 et 4 : bissectrice [OV) de UOW --- */
+ function bis(num){const O=[42,140],U=P(O,0,186),V=P(O,35,178),W=P(O,70,132);
+  let s=L(O,U)+L(O,V)+L(O,W)+angD(O,0,35,44,BLUE,1)+angD(O,35,70,44,BLUE,1);
+  if(num)s+=arc(O,0,70,84,GREEN,2.2,"6 4")+T(P(O,17.5,64),"35°",{s:13,c:BLUE})+T(P(O,52.5,64),"35°",{s:13,c:BLUE})+T(P(O,52,100),"70°",{s:14,c:GREEN});
+  return s+dot(O)+lab(O,225,"O",14)+lab(U,90,"U")+lab(V,125,"V",13)+lab(W,0,"W",13);}
+ /* --- fiches 5 et 6 : droites (AC) et (BD) sécantes en O --- */
+ function opp(eq){const O=[120,82],A=P(O,20,100),C=P(O,200,100),B=P(O,112,74),D=P(O,292,74);
+  return L(A,C)+L(B,D)+angD(O,20,112,24,BLUE,eq?2:0)+angD(O,200,292,24,eq?BLUE:ORANGE,eq?2:0)+dot(O)+lab(O,156,"O",16)+lab(A,90,"A")+lab(C,270,"C")+lab(B,180,"B")+lab(D,0,"D");}
+ /* --- fiches 7 à 11, 15, 16 : (d₁) et (d₂) coupées par la sécante (s) en A et B --- */
+ function sec(par,kind,eq,pm){
+  const d1=par?[[8,52],[232,52]]:[[8,40],[232,62]],d2=par?[[8,116],[232,116]]:[[8,128],[232,104]];
+  const s0=[70,156],s1=[176,6];const A=inter(d1[0],d1[1],s0,s1),B=inter(d2[0],d2[1],s0,s1);
+  let s=L(d1[0],d1[1])+L(d2[0],d2[1])+L(s0,s1);
+  const dr1=dir(d1[0],d1[1]),dr2=dir(d2[0],d2[1]),up=dir(s0,s1);
+  const col=BLUE,n=eq?1:0;
+  if(kind==="alt")s+=angD(A,dr1+180,up+180,22,col,n)+angD(B,dr2,up,22,col,n);
+  if(kind==="cor")s+=angD(A,dr1,up,22,col,n)+angD(B,dr2,up,22,col,n);
+  if(pm)s+=chev([206,d1[0][1]],0)+chev([206,d2[0][1]],0);
+  return s+dot(A)+dot(B)+lab(A,150,"A",13)+lab(B,150,"B",13)+T([24,d1[0][1]-13],"(d₁)",{s:14,it:1})+T([24,d2[0][1]+(par?-13:-14)],"(d₂)",{s:14,it:1})+T([192,14],"(s)",{s:14,it:1});}
+ /* --- fiches 17 à 20 : triangles --- */
+ function tri(k){let A,B,C,s="";
+  if(k===17){A=[30,136];B=[212,136];C=[146,24];s=ang(A,B,C,24,BLUE)+ang(B,C,A,24,ORANGE)+ang(C,A,B,20,GREEN);}
+  if(k===18){A=[50,134];B=[214,134];C=[50,26];s=square(A,0,90,14)+ang(B,C,A,30,BLUE)+ang(C,A,B,24,ORANGE);}
+  if(k===19){A=[120,20];B=[46,140];C=[194,140];s=segT(A,B,1)+segT(A,C,1)+ang(B,C,A,24,BLUE,1)+ang(C,A,B,24,BLUE,1)+ang(A,B,C,22,ORANGE);}
+  if(k===20){A=[120,20];B=[50,141];C=[190,141];s=segT(A,B,1)+segT(B,C,1)+segT(C,A,1)+ang(A,B,C,20,BLUE,1)+ang(B,C,A,20,BLUE,1)+ang(C,A,B,20,BLUE,1);}
+  const g=[(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3],out=p=>P(p,dir(g,p),13);
+  return `<path d="M${A} L${B} L${C} Z" fill="none" stroke="${INK}" stroke-width="2.4" stroke-linejoin="round"/>`+s+T(out(A),"A")+T(out(B),"B")+T(out(C),"C");}
+ /* --- fiche 22 : droite graduée, origine O, point H --- */
+ function axe(){const y=88,u=22,x0=120;let s=L([8,y],[228,y])+`<path d="M222 ${y-7} L233 ${y} L222 ${y+7}" fill="none" stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  for(let k=-5;k<=4;k++){const x=x0+k*u;s+=L([x,y-7],[x,y+7],k===0?2.6:1.8);}
+  const H=[x0-3*u,y];return s+T([x0,y+20],"0",{s:14})+T([x0+u,y+20],"1",{s:14})+T([x0,y-20],"O",{s:15})+`<circle cx="${H[0]}" cy="${y}" r="4.5" fill="${RED}"/>`+T([H[0],y-20],"H",{s:15,c:RED});}
+
+ const B={1:()=>adj(0),2:()=>adj(1),3:()=>bis(0),4:()=>bis(1),5:()=>opp(0),6:()=>opp(1),
+  7:()=>sec(0,"",0,0),8:()=>sec(0,"alt",0,0),9:()=>sec(0,"cor",0,0),10:()=>sec(1,"alt",1,1),11:()=>sec(1,"cor",1,1),
+  15:()=>sec(1,"alt",1,0),16:()=>sec(1,"cor",1,0),17:()=>tri(17),18:()=>tri(18),19:()=>tri(19),20:()=>tri(20),22:axe};
+ const cache={};
+ function svg(f){f=+f;if(!B[f])return "";return cache[f]||(cache[f]=wrap(B[f]()));}
+ function has(f){return !!B[+f];}
+ function box(f){const s=svg(f);return s?`<button type="button" class="schbox" data-schf="${+f}" data-t="${Date.now()}" aria-label="Agrandir la figure">${s}<span class="schz">🔍</span></button>`:"";}
+ function mount(el,f){if(!el)return;const h=f!=null?box(f):"";el.innerHTML=h;el._schT=performance.now();el.classList.add("schslot");el.classList.toggle("schhide",!h);}
+ function open(f){openSvg(svg(f));}
+ function openSvg(s,bp){if(!s)return;let ov=document.getElementById("schOv");
+  if(!ov){ov=document.createElement("div");ov.id="schOv";document.body.appendChild(ov);
+   ov.addEventListener("click",close);}
+  ov.innerHTML=`<div class="schbig${bp?" bp":""}">${s}</div><p>Touche pour fermer</p>`;ov.classList.add("on");}
+ function close(){const ov=document.getElementById("schOv");if(ov){ov.classList.remove("on");ov.innerHTML="";}}
+ if(typeof document!=="undefined")document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".schbox");if(b){e.preventDefault();e.stopPropagation();const sl=b.closest(".schslot");if(sl&&sl._schT&&performance.now()-sl._schT<450)return;if(b.dataset.t&&Date.now()-(+b.dataset.t)<450)return;/* le toucher qui a ouvert le panneau ne doit pas aussi agrandir la figure */const v=b.querySelector("svg");openSvg(v&&v.outerHTML,b.classList.contains("schbp"));}},true);
+ /* figure déjà dessinée par le jeu (plan de l'usine) : copie inerte, touchable aussi */
+ function boxRaw(inner,vb){return `<button type="button" class="schbox schbp" aria-label="Agrandir la figure"><svg class="schsvg" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${inner}</svg><span class="schz">🔍</span></button>`;}
+ return {svg,has,box,boxRaw,mount,open,openSvg,close,list:()=>Object.keys(B).map(Number)};
+})();
+
+/* ================= LIENS : titres courts, sortes de liens en mots simples, explication de chaque lien, aide =================
+   Partagé entre la Mine du Par Cœur (rails) et Métro Mémo (voies). Les mécanismes des jeux ne changent pas. */
+const LIENS=(()=>{
+ const SHORT={1:"Angles adjacents",2:"Adjacents : addition",3:"Bissectrice",4:"Bissectrice : mesures",5:"Opposés par le sommet",6:"Opposés : même mesure",
+  7:"Droite sécante",8:"Alternes-internes",9:"Correspondants",10:"Parallèles et alternes-internes",11:"Parallèles et correspondants",
+  12:"Angles complémentaires",13:"Angles supplémentaires",14:"Réciproque",15:"Alternes égaux : parallèles",16:"Correspondants égaux : parallèles",
+  17:"Triangle : somme des angles",18:"Triangle rectangle",19:"Triangle isocèle",20:"Triangle équilatéral",21:"Nombre relatif",22:"Droite graduée"};
+ /* les 4 sortes de liens (mêmes clés que le jeu), dites simplement */
+ const TYPES={
+  def:{icon:"📘",plain:"Un mot expliqué sert dans l'autre",why:"La première fiche explique un mot. La deuxième fiche utilise ce mot.",ex:"La fiche 3 explique le mot « bissectrice ». La fiche 4 utilise ce mot."},
+  rec:{icon:"🔁",plain:"C'est la réciproque",why:"On échange le « si » et le « alors ». Ce qu'on savait devient ce qu'on prouve.",ex:"Fiche 10 : si les droites sont parallèles, alors les angles sont égaux. Fiche 15 : si les angles sont égaux, alors les droites sont parallèles."},
+  jum:{icon:"🪞",plain:"Presque la même phrase",why:"Les deux phrases sont écrites pareil. Un seul mot ou un nombre change. (Ce n'est pas un point commun sur la figure.)",ex:"« Mon chat est noir » et « Mon chat est blanc » : un seul mot change."},
+  cas:{icon:"🔍",plain:"Un cas particulier",why:"Une fiche marche pour toutes les figures. L'autre l'applique à une figure spéciale.",ex:"La fiche 17 marche pour tous les triangles. La fiche 18 l'applique au triangle rectangle."}
+ };
+ /* la phrase qui explique chaque lien attendu (vérifiée avec le cours) */
+ const EX={
+  "5-6":"La fiche 5 explique ce que sont des angles opposés par le sommet. La fiche 6 dit qu'ils ont la même mesure.",
+  "1-2":"La fiche 1 explique ce que sont des angles adjacents. La fiche 2 dit qu'on peut additionner leurs mesures : AOC = AOB + BOC.",
+  "1-3":"La fiche 1 explique ce que sont des angles adjacents. La fiche 3 utilise ce mot : la bissectrice partage un angle en 2 angles adjacents de même mesure.",
+  "3-4":"La fiche 3 explique ce qu'est la bissectrice. La fiche 4 donne les mesures des angles qu'elle forme : UOV = VOW = UOW ÷ 2.",
+  "12-13":"Les fiches 12 et 13 sont la même phrase. Seuls le mot et le nombre changent : complémentaires avec 90°, supplémentaires avec 180°.",
+  "7-8":"La fiche 7 explique ce qu'est une sécante. La fiche 8 l'utilise : deux droites coupées par une sécante définissent des angles alternes-internes.",
+  "7-9":"La fiche 7 explique ce qu'est une sécante. La fiche 9 l'utilise : deux droites coupées par une sécante définissent des angles correspondants.",
+  "8-10":"La fiche 8 explique ce que sont des angles alternes-internes. La fiche 10 dit qu'ils ont la même mesure quand les deux droites sont parallèles.",
+  "9-11":"La fiche 9 explique ce que sont des angles correspondants. La fiche 11 dit qu'ils ont la même mesure quand les deux droites sont parallèles.",
+  "10-11":"Les fiches 10 et 11 sont la même phrase. Seul le nom des angles change : alternes-internes dans la 10, correspondants dans la 11.",
+  "10-15":"La fiche 15 est la réciproque de la fiche 10. La 10 part des droites parallèles. La 15 part des angles alternes-internes égaux pour prouver que les droites sont parallèles.",
+  "11-16":"La fiche 16 est la réciproque de la fiche 11. La 11 part des droites parallèles. La 16 part des angles correspondants égaux pour prouver que les droites sont parallèles.",
+  "14-15":"La fiche 14 explique ce qu'est une réciproque. La fiche 15 en est une : c'est la réciproque de la fiche 10.",
+  "14-16":"La fiche 14 explique ce qu'est une réciproque. La fiche 16 en est une : c'est la réciproque de la fiche 11.",
+  "17-18":"La fiche 17 marche pour tous les triangles : 180°. La fiche 18 l'applique au triangle rectangle : 180° − 90° = 90° pour les deux autres angles.",
+  "17-19":"La fiche 17 marche pour tous les triangles : 180°. La fiche 19 l'applique au triangle isocèle : ses deux angles à la base ont la même mesure.",
+  "17-20":"La fiche 17 marche pour tous les triangles : 180°. La fiche 20 l'applique au triangle équilatéral : 180° ÷ 3 = 60° pour chaque angle.",
+  "21-22":"La fiche 21 explique ce qu'est un nombre relatif. La fiche 22 l'utilise : l'abscisse d'un point est un nombre relatif."
+ };
+ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+ function apply(LT,LK){for(const k in TYPES)if(LT[k]){LT[k].name=TYPES[k].icon+" "+TYPES[k].plain;LT[k].why=TYPES[k].why;}
+  (LK||[]).forEach(L=>{L.ex=EX[L.key]||"";});}
+ if(typeof LTYPES!=="undefined"&&typeof LINKS!=="undefined")apply(LTYPES,LINKS);
+ function q(L){const p="Pourquoi vont-elles ensemble ? ";
+  if(L.q)return p+L.q;
+  if(L.t==="def")return p+`Écris le mot expliqué dans la fiche ${L.a} et utilisé dans la fiche ${L.b}.`;
+  if(L.t==="rec")return p+`Que permet de prouver la fiche ${L.b} ? Les deux droites sont …`;
+  if(L.t==="jum")return p+"Les deux phrases sont presque pareilles. Écris un mot ou un nombre qui change.";
+  return p+"Écris le cas particulier.";}
+ /* vérification tolérante : sans accents, pluriels, majuscules, petite faute de frappe ; une phrase entière marche aussi */
+ const N=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[-'’]/g," ").replace(/[^a-z0-9° ]/g," ").replace(/\s+/g," ").trim();
+ const sing=w=>w.length>3?w.replace(/(s|x)$/,""):w;
+ const lev=(a,b)=>{if(Math.abs(a.length-b.length)>1)return 9;const d=[];for(let i=0;i<=a.length;i++){d[i]=[i];for(let j=1;j<=b.length;j++)d[i][j]=i?Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)):j;}return d[a.length][b.length];};
+ const NUMW={"dix":"10","onze":"11","soixante":"60","quatre vingt dix":"90","cent quatre vingt":"180"};
+ function match(v,L){let n=N(v);if(!n)return false;for(const k of Object.keys(NUMW).sort((x,y)=>y.length-x.length))n=n.replace(new RegExp("\\b"+k+"\\b","g"),NUMW[k]);
+  const W=n.split(" ").map(sing);
+  if(L.exact)return L.kw.some(k=>n===N(k)||W.length<=3&&W.includes(N(k)));
+  return L.kw.some(k=>{const kk=N(k).split(" ").map(sing);
+   return kk.every(x=>W.some(w=>w===x||(x.length>=6&&lev(w,x)<=1)||(x.length>=6&&w.startsWith(x))));});}
+ /* rails qui cassent : explication douce + piste vers le bon partenaire */
+ function partner(f,links,isDone,isOpen){const c=links.filter(L=>(L.a===f||L.b===f)&&!isDone(L)).map(L=>L.a===f?L.b:L.a);
+  return c.find(x=>!isOpen||isOpen(x))||c[0]||null;}
+ function badPair(a,b,links,isDone,isOpen,word){
+  const pa=partner(a,links,isDone,isOpen),pb=partner(b,links,isDone,isOpen);
+  let h=`« ${esc(SHORT[a])} » et « ${esc(SHORT[b])} » ne vont pas ensemble : aucune n'explique un mot de l'autre, et ce ne sont pas deux phrases presque pareilles.`;
+  const p=pa?[a,pa]:pb?[b,pb]:null;
+  h+=p?`<br>💡 Piste : la fiche ${p[0]} va avec « ${esc(SHORT[p[1]])} ».`:`<br>💡 Ces deux ${word||"fiches"} ont déjà tous leurs liens.`;
+  return h;}
+ /* carte d'une fiche : titre, type, figure. Jamais le texte. */
+ function card(f,F){const t=F&&F.t==="P"?"Propriété":"Définition";
+  return `<div class="lncard"><div class="lnct"><span class="lnbadge ${F?F.t:""}">${F?F.t:""}${f}</span><b>${esc(SHORT[f]||"")}</b></div><div class="lnty">${t} · fiche ${f}</div>${typeof SCH!=="undefined"&&SCH.has(f)?`<div class="schslot">${SCH.box(f)}</div>`:""}</div>`;}
+ function selShow(f,F,extra){let d=document.getElementById("lnSel");if(!d){d=document.createElement("div");d.id="lnSel";document.body.appendChild(d);}
+  d.innerHTML=card(f,F)+(extra?`<div class="lnsx">${extra}</div>`:"");d.classList.add("on");const sl=d.querySelector(".schslot");if(sl)sl._schT=performance.now();}
+ function selHide(){const d=document.getElementById("lnSel");if(d)d.classList.remove("on");}
+ /* aide : à quoi sert un rail / une voie */
+ function helpHTML(kind){const V=kind==="voie";const un=V?"une voie":"un rail",Un=V?"Une voie":"Un rail";
+  const how=V?"Glisse ton doigt d'une station ouverte à une autre.":"Touche « 🛤️ Poser des rails », puis une fiche, puis une autre.";
+  const mini=f=>`<div class="lnmini"><span class="lnbadge ${FICHES[f].t}">${FICHES[f].t}${f}</span><b>${esc(SHORT[f])}</b>${typeof SCH!=="undefined"?SCH.svg(f):""}</div>`;
+  return `<div class="lnbox"><h2>${V?"🚆 À quoi sert une voie ?":"🛤️ À quoi sert un rail ?"}</h2>
+   <p>Tes fiches ne sont pas seules. Certaines vont ensemble.</p>
+   <p><b>${Un} relie deux fiches quand l'une aide à comprendre ou à utiliser l'autre.</b></p>
+   <div class="lnex"><div class="lnexrow">${mini(3)}<svg class="lnrail" viewBox="0 0 120 40"><line x1="4" y1="14" x2="116" y2="14"/><line x1="4" y1="26" x2="116" y2="26"/>${[0,1,2,3,4,5,6].map(i=>`<rect x="${8+i*16}" y="9" width="5" height="22" style="animation-delay:${.3+i*.18}s"/>`).join("")}</svg>${mini(4)}</div>
+    <p class="lnexp">La fiche 3 explique le mot « bissectrice ». La fiche 4 utilise ce mot pour donner des mesures. Donc on les relie.</p></div>
+   <h3>Les 4 sortes de liens</h3>
+   <div class="lntypes">${Object.keys(TYPES).map(k=>`<div class="lnty1"><span class="lnico">${TYPES[k].icon}</span><div><b>${TYPES[k].plain}</b><br>${TYPES[k].why}<br><i>Exemple : ${TYPES[k].ex}</i></div></div>`).join("")}</div>
+   <h3>Comment faire ?</h3>
+   <ol><li>${how}</li><li>Choisis la sorte de lien.</li><li>Dis pourquoi : tape un mot, ou dicte au micro 🎤.</li><li>Si les deux fiches ne vont pas ensemble, ${un} casse. Ce n'est pas grave : une piste t'aide.</li></ol>
+   <div class="lnbtns"><button type="button" class="lnok" id="lnHelpOk">✔ J'ai compris</button></div></div>`;}
+ let onDone=null;
+ function openHelp(kind,cb){let ov=document.getElementById("lnHelp");if(!ov){ov=document.createElement("div");ov.id="lnHelp";document.body.appendChild(ov);}
+  onDone=cb||null;ov.innerHTML=helpHTML(kind);ov.classList.add("on");ov.scrollTop=0;document.getElementById("lnHelpOk").onclick=()=>closeHelp();}
+ function closeHelp(){const ov=document.getElementById("lnHelp");if(!ov||!ov.classList.contains("on"))return;ov.classList.remove("on");ov.innerHTML="";const c=onDone;onDone=null;if(c)c();}
+ function isHelpOpen(){const ov=document.getElementById("lnHelp");return !!(ov&&ov.classList.contains("on"));}
+ return {SHORT,TYPES,EX,apply,q,match,badPair,partner,card,selShow,selHide,openHelp,closeHelp,isHelpOpen,N};
+})();
+
 /* ================= SCÈNE 3D ================= */
 const V3=THREE.Vector3;
 const renderer=new THREE.WebGLRenderer({canvas:$("cv"),antialias:false,powerPreference:"high-performance"});
@@ -833,12 +1057,20 @@ const clouds=[];{const cm=new THREE.MeshLambertMaterial({color:0xffffff,transpar
  for(let i=0;i<14;i++){const g=new THREE.Group();const n=2+(r()*3|0);for(let k=0;k<n;k++){const b=new THREE.Mesh(BOX,cm);b.scale.set(4+r()*5,1.2,3+r()*4);b.position.set(k*3.5-n*1.7,0,(r()-.5)*3);g.add(b);}
   g.position.set(-40+r()*280,24+r()*6,-50+r()*100);scene.add(g);clouds.push(g);}}
 /* ---------- textes sur sprites ---------- */
-function signCanvas(f){const c=cvs(160,96),x=c.getContext("2d"),s=FS(f),w=WORLDS[FW[f]];
- x.fillStyle="rgba(0,0,0,.72)";x.fillRect(4,4,152,88);x.strokeStyle=w.css;x.lineWidth=6;x.strokeRect(5,5,150,86);
- x.fillStyle=FICHES[f].t==="D"?"#3f9a3a":"#c8473b";x.fillRect(14,16,40,40);x.strokeStyle="#111";x.lineWidth=3;x.strokeRect(14,16,40,40);
- x.fillStyle="#fff";x.font="900 30px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(FICHES[f].t,34,37);
- x.font="900 50px sans-serif";x.fillText(String(f),104,38);
- for(let k=0;k<4;k++){const done=s.forged||s.pass>k+1;x.fillStyle=done?"#f2c230":"#555";x.fillRect(16+k*34,66,28,16);x.strokeStyle="#111";x.lineWidth=2;x.strokeRect(16+k*34,66,28,16);}
+/* panneau d'une fiche : numéro, titre court lisible et petite figure (la figure arrive dès que son image est prête) */
+const SIGNIMG={},SIGNW=4.2,SIGNH=2.89;
+function signImg(f){if(SIGNIMG[f]!==undefined)return SIGNIMG[f];SIGNIMG[f]=null;if(typeof SCH==="undefined"||!SCH.has(f))return null;
+ const im=new Image();im.onload=()=>{SIGNIMG[f]=im;if(STN[f])refreshStation(f);};im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(SCH.svg(f));return null;}
+function wrapTxt(x,t,maxW){const W=t.split(" "),L=[];let cur="";for(const w of W){const tr=cur?cur+" "+w:w;if(x.measureText(tr).width>maxW&&cur){L.push(cur);cur=w;}else cur=tr;}if(cur)L.push(cur);return L;}
+function signCanvas(f){const c=cvs(320,220),x=c.getContext("2d"),s=FS(f),w=WORLDS[FW[f]],F=FICHES[f];
+ x.fillStyle="rgba(10,10,10,.84)";x.fillRect(4,4,312,212);x.strokeStyle=w.css;x.lineWidth=7;x.strokeRect(5,5,310,210);
+ x.fillStyle=F.t==="D"?"#3f9a3a":"#c8473b";x.fillRect(14,14,104,46);x.strokeStyle="#111";x.lineWidth=3;x.strokeRect(14,14,104,46);
+ x.fillStyle="#fff";x.textAlign="center";x.textBaseline="middle";x.font="900 34px sans-serif";x.fillText(F.t+" "+f,66,38);
+ for(let k=0;k<4;k++){const done=s.forged||s.pass>k+1;x.fillStyle=done?"#f2c230":"#555";x.fillRect(14+k*27,66,22,12);}
+ const im=signImg(f);if(im){x.fillStyle="#fffdf4";x.fillRect(196,12,111,74);x.drawImage(im,196,12,111,74);}
+ const title=(typeof LIENS!=="undefined"&&LIENS.SHORT[f])||F.title,tw=292;
+ let fs=40;x.font=`800 ${fs}px sans-serif`;let L=wrapTxt(x,title,tw);while((L.length>2||L.some(l=>x.measureText(l).width>tw))&&fs>24){fs-=2;x.font=`800 ${fs}px sans-serif`;L=wrapTxt(x,title,tw);}
+ x.fillStyle="#fff";x.textAlign="left";const y0=92+(118-L.length*(fs+6))/2+fs/2;L.forEach((l,i)=>x.fillText(l,14,y0+i*(fs+6)));
  return c;}
 function lockCanvas(txt){const c=cvs(256,128),x=c.getContext("2d");x.fillStyle="rgba(0,0,0,.7)";x.fillRect(0,0,256,128);x.fillStyle="#ffd84a";x.fillRect(20,52,52,48);x.strokeStyle="#ffd84a";x.lineWidth=8;x.beginPath();x.arc(46,52,16,Math.PI,0);x.stroke();x.fillStyle="#111";x.fillRect(42,66,8,18);
  x.fillStyle="#fff";x.font="800 24px sans-serif";x.textBaseline="middle";const ws=txt.split("\n");ws.forEach((l,i)=>x.fillText(l,86,48+i*32));return c;}
@@ -852,7 +1084,7 @@ ISL.forEach(isl=>{isl.w.fiches.forEach((f,k)=>{const [ix,iz]=isl.st[k];const X=i
  const g=new THREE.Group();g.position.set(X,h,Z);
  const base=new THREE.Mesh(BOX,COB);base.position.y=.5;g.add(base);
  const anv=makeAnvil();anv.position.y=1;anv.rotation.y=Math.atan2(-ix,-iz)+Math.PI/2;g.add(anv);
- const sign=textSprite(signCanvas(f),1.9,1.14);sign.position.y=3;g.add(sign);
+ const sign=textSprite(signCanvas(f),SIGNW,SIGNH);sign.position.y=3.8;sign.userData.fiche=f;g.add(sign);stationHits.push(sign);
  const beam=new THREE.Mesh(BOX,new THREE.MeshBasicMaterial({color:isl.w.col,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending}));beam.scale.set(.5,40,.5);beam.position.y=21;beam.visible=false;g.add(beam);
  const item=textSprite(itemIcon(f),.9,.9);item.material.map.magFilter=THREE.NearestFilter;item.material.map.minFilter=THREE.NearestFilter;item.position.y=2;item.visible=false;g.add(item);
  const hit=new THREE.Mesh(BOX,hitMat);hit.scale.set(1.8,4,1.8);hit.position.y=1.8;hit.userData.fiche=f;g.add(hit);stationHits.push(hit);
@@ -937,13 +1169,22 @@ cv.addEventListener("pointerup",endPtr);cv.addEventListener("pointercancel",endP
 cv.addEventListener("wheel",e=>{CAM.tDist=Math.max(9,Math.min(60,CAM.tDist*(1+e.deltaY*.001)));e.preventDefault();},{passive:false});
 function pick(x,y,list){ndc.set(x/window.innerWidth*2-1,-(y/window.innerHeight)*2+1);ray.setFromCamera(ndc,camera);return ray.intersectObjects(list,false)[0];}
 function screenOf(v){const p=v.clone().project(camera);return [(p.x+1)/2*window.innerWidth,(1-p.y)/2*window.innerHeight];}
+/* les panneaux ne se cachent pas les uns les autres : chaque image, un panneau qui en recouvre un plus proche monte un peu */
+const _dc=new V3(),_dt=new V3();
+function declutter(){const isl=ISL[S.world];if(!isl)return;const W=window.innerWidth,H=window.innerHeight;
+ const A=isl.w.fiches.map(f=>{const s=STN[f];_dc.copy(s.pos);_dc.y+=3.8;const d=camera.position.distanceTo(_dc);const c=_dc.clone().project(camera);
+  _dt.copy(_dc);_dt.y+=s.sign.scale.y/2;const t=_dt.clone().project(camera);const hh=Math.max(1,(t.y-c.y)/2*H),hw=hh*s.sign.scale.x/s.sign.scale.y;
+  const cx=(c.x+1)/2*W,cy=(1-c.y)/2*H;return {s,d,ok:c.z<1,l:cx-hw,r:cx+hw,t:cy-hh,b:cy+hh,u:(s.sign.scale.y/2)/hh};}).sort((a,b)=>a.d-b.d);
+ const P=[];for(const a of A){if(!a.ok)continue;let lift=0;
+  for(let k=0;k<12;k++){const o=P.find(p=>a.l<p.r-2&&a.r>p.l+2&&a.t-lift<p.b-2&&a.b-lift>p.t+2);if(!o)break;lift+=(a.b-lift)-(o.t-3);}
+  P.push({l:a.l,r:a.r,t:a.t-lift,b:a.b-lift,f:a.s.sign.userData.fiche});const tg=lift*a.u;a.s.lift=(a.s.lift||0)+(tg-(a.s.lift||0))*0.25;a.s.sign.position.y=3.8+a.s.lift;}window.__signRects=P;}
 /* déplacement du joueur */
 const WALK={to:null,cb:null,stepT:0};
 function walkTo(x,z,cb){WALK.to=new V3(x,0,z);WALK.cb=cb;}
 function placePlayer(i){const isl=ISL[i];P.g.position.set(isl.cx+.5,groundY(isl.cx,isl.cz+3),isl.cz+3.2);P.g.rotation.y=Math.PI;WALK.to=null;}
 /* boucle */
 let last=performance.now(),acc=0;const FPS={frames:[],avg:0};let panelOpen=false,skip=0;
-function loop(now){requestAnimationFrame(loop);let dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;
+function loop(now){requestAnimationFrame(loop);try{declutter();}catch(_){}let dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;
  FPS.frames.push(dt);if(FPS.frames.length>90)FPS.frames.shift();
  if(panelOpen&&(++skip%2))return; if(panelOpen)dt=Math.min(.1,dt*2);
  const t=now/1000;
@@ -1049,17 +1290,18 @@ const VOIX={bars:{},pending:null,denied:false,cur:null,
   box.classList.remove("vxhide");B.q(".vxrmic").classList.toggle("vxhide",!can||!this.SR()||this.denied);B.q(".vxrkb").classList.toggle("vxhide",!can);},
  redoDone(B,t){const res=B.res;if(!res)return;const merged=(typeof mergeBest==="function")?mergeBest(res,B.redoPi,dictNorm(t)):(B.redoText+" "+t);
   B.q(".vxredo").classList.add("vxhide");this.say(B,"Partie remise à sa place.","vxon");B.o.retry&&B.o.retry(merged);},
+ fig(f){return (typeof SCH!=="undefined"&&SCH.has(f))?`<div class="schslot vxsch">${SCH.box(f)}</div>`:"";},
  take(){const p=this.pending;this.pending=null;return p;},
  /* ---------- Papa écoute ---------- */
  papaOpen(B){if(this.cur)this.stop(this.cur);const f=B.o.fiche();if(!f)return;B.o.pause&&B.o.pause();
   let ov=document.getElementById("vxPapa");if(!ov){ov=document.createElement("div");ov.id="vxPapa";document.body.appendChild(ov);}
   this.pp={B,f};ov.className="vxov on";this.papaStep(1);},
  papaStep(n){const ov=document.getElementById("vxPapa"),{B,f}=this.pp,F=FICHES[f];
-  if(n===1)ov.innerHTML=`<div class="vxcard"><h3>👂 Papa écoute</h3><p>Récite la fiche à voix haute, sans regarder. Papa écoute.</p><p class="vxtitle">Fiche ${f} : « ${this.esc(F.title)} »</p>
+  if(n===1)ov.innerHTML=`<div class="vxcard"><h3>👂 Papa écoute</h3><p>${this.fig(f)?"Récite la fiche à voix haute, sans regarder le texte. Tu peux regarder la figure.":"Récite la fiche à voix haute, sans regarder. Papa écoute."}</p><p class="vxtitle">Fiche ${f} : « ${this.esc(F.title)} »</p>${this.fig(f)}
    <div class="vxbtns"><button type="button" class="vxb big" id="vxP1">✋ J'ai fini, je passe l'iPad à papa</button><button type="button" class="vxb" id="vxPx">Annuler</button></div></div>`;
   if(n===2){const a=6+Math.floor(Math.random()*4),b=6+Math.floor(Math.random()*4);this.pp.ans=a*b;
    ov.innerHTML=`<div class="vxcard"><h3>🔒 Pour papa</h3><p>Combien font ${a} × ${b} ?</p><input id="vxPin" inputmode="numeric" pattern="[0-9]*" autocomplete="off"><div class="vxbtns"><button type="button" class="vxb big" id="vxP2">Valider</button><button type="button" class="vxb" id="vxPx">Annuler</button></div><p class="vxst" id="vxPm"></p></div>`;}
-  if(n===3)ov.innerHTML=`<div class="vxcard"><h3>📜 Fiche ${f} : ${this.esc(F.title)}</h3><div class="vxfiche">${this.esc(F.txt).replace(/\{([^}]*)\}/g,'<span class="vxopt">$1</span>').replace(/ • /g,"<br>• ")}</div>
+  if(n===3)ov.innerHTML=`<div class="vxcard"><h3>📜 Fiche ${f} : ${this.esc(F.title)}</h3>${this.fig(f)}<div class="vxfiche">${this.esc(F.txt).replace(/\{([^}]*)\}/g,'<span class="vxopt">$1</span>').replace(/ • /g,"<br>• ")}</div>
    <p>Comment a-t-il récité ?</p><div class="vxbtns"><button type="button" class="vxb big vxg1" data-g="coeur">✅ Par cœur</button><button type="button" class="vxb big vxg2" data-g="presque">🟠 Presque</button><button type="button" class="vxb big vxg3" data-g="revoir">🔁 À revoir</button></div></div>`;
   const x=document.getElementById("vxPx");if(x)x.onclick=()=>this.papaClose(null);
   const p1=document.getElementById("vxP1");if(p1)p1.onclick=()=>this.papaStep(2);
@@ -1101,7 +1343,9 @@ function setWorld(i){i=Math.max(0,Math.min(WORLDS.length-1,i));S.world=i;save();
  const ws=worldState(i);if(!ws.unlocked){SND.locked();}if(!ws.unlocked)toast("🔒 Ce monde est fermé. Bats d'abord le gardien du monde précédent.");}
 $("wPrev").onclick=()=>{SND.click();setWorld(S.world-1)};$("wNext").onclick=()=>{SND.click();setWorld(S.world+1)};
 $("bSnd").onclick=()=>{S.sound=!S.sound;save();updateHUD();if(S.sound){IOSAU.unlock();SND.click();}};
-$("bRails").onclick=()=>{SND.click();railMode=!railMode;clearSel();updateHUD();if(railMode)toast("🛤️ Touche une enclume, puis une autre fiche qui va avec.<br>Les deux fiches doivent être forgées.",4000);};
+$("bRHelp").onclick=()=>{SND.click();LIENS.openHelp("rail");};
+$("lkHelp").onclick=()=>{SND.click();LIENS.openHelp("rail");};
+$("bRails").onclick=()=>{SND.click();if(!railMode&&!S.railIntro){LIENS.openHelp("rail",()=>{S.railIntro=today();save();$("bRails").click();});return;}railMode=!railMode;clearSel();updateHUD();if(railMode)toast("🛤️ Touche une enclume, puis une autre fiche qui va avec.<br>Les deux fiches doivent être forgées.",4000);};
 $("bHint").onclick=()=>{SND.hint();const i=S.world;const L=LINKS.filter(l=>l.w===i&&!S.links[l.key]);const ok=L.find(l=>FS(l.a).forged&&FS(l.b).forged);
  if(!L.length)return toast("Le réseau de ce monde est complet !");if(!ok)return toast("Forge d'abord d'autres fiches de ce monde.");
  const f=Math.random()<.5?ok.a:ok.b;burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffe060,22);toast(`💡 La fiche ${f} attend encore un lien. Avec quelle fiche va-t-elle ?`,4000);};
@@ -1110,7 +1354,7 @@ $("bRev").onclick=()=>{SND.click();startReview()};
 $("bInv").onclick=()=>{SND.click();openInv()};
 $("bPar").onclick=()=>{SND.click();openGate()};
 /* ---------- tap dans le monde ---------- */
-function clearSel(){if(railSel){STN[railSel].sign.scale.set(1.9,1.14,1);}railSel=null;}
+function clearSel(){if(railSel){STN[railSel].sign.scale.set(SIGNW,SIGNH,1);}railSel=null;if(typeof LIENS!=="undefined")LIENS.selHide();}
 function onTap(x,y){if(panelOpen||!started)return;
  const h=pick(x,y,stationHits.concat(golemHits));
  if(h){if(h.object.userData.fiche)return tapStation(h.object.userData.fiche);if(h.object.userData.golem!==undefined)return tapGolem(h.object.userData.golem);}
@@ -1127,18 +1371,18 @@ function tapGolem(i){if(i!==S.world)return;const ws=worldState(i);if(!ws.unlocke
 /* ---------- rails ---------- */
 let LK=null;
 function railTap(f){if(!FS(f).forged){SND.bad();return toast(`Forge d'abord la fiche ${f}.`);}
- if(!railSel){railSel=f;STN[f].sign.scale.set(2.5,1.5,1);SND.click();burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffe060,10);return toast(`Fiche ${f} choisie. Touche l'autre fiche à relier.`);}
+ if(!railSel){railSel=f;STN[f].sign.scale.set(SIGNW*1.3,SIGNH*1.3,1);SND.click();burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffe060,10);LIENS.selShow(f,FICHES[f],"Fiche choisie. Touche l'autre fiche qui va avec.");return;}
  if(railSel===f){clearSel();SND.click();return toast("Choix annulé.");}
  const a=railSel,b=f;clearSel();const L=findLink(a,b);
  if(L&&S.links[L.key]){SND.nudge();}if(L&&S.links[L.key])return toast(`Les fiches ${a} et ${b} sont déjà reliées. ⚡`);
  const A=L?L.a:a,B=L?L.b:b;const R=layRails(A,B,true,false);const dur=R.tiles.length*55+450;
- setTimeout(()=>{if(!L){removeRails(R.key,true);SND.breakR();S.stats.badLinks++;save();toast(`💥 Les rails cassent. Les fiches ${a} et ${b} ne sont pas reliées directement.<br>Cherche un mot en commun ou une phrase jumelle.`,4500);}
+ setTimeout(()=>{if(!L){removeRails(R.key,true);SND.breakR();S.stats.badLinks++;save();toast(`💥 Les rails cassent. `+LIENS.badPair(a,b,LINKS.filter(l=>l.w===FW[a]),l=>!!S.links[l.key],x=>FS(x).forged),7000);}
   else openLink(L);},dur);}
 function chip(f){return `<button class="chip" data-peek="${f}"><span class="badge ${FICHES[f].t}">${FICHES[f].t}${f}</span>${esc(FICHES[f].title)}</button>`;}
 function openLink(L){LK={L,step:1,done:false,wrong:0};
  $("lkPair").innerHTML=chip(L.a)+" <b style='font-size:22px'>➜</b> "+chip(L.b)+"<p style='font-size:14px;opacity:.85'>Touche une fiche pour la relire.</p>";
  $("lkPeek").innerHTML="";$("lkSlot").className="slot";$("lkSlot").innerHTML="Pose un bloc ici";
- $("lkStep2").classList.add("hide");$("lkIn").value="";$("lkMsg").textContent="";$("lkMsg").className="msg";
+ $("lkStep2").classList.add("hide");$("lkWhy").classList.add("hide");$("lkIn").value="";$("lkMsg").textContent="";$("lkMsg").className="msg";
  const keys=Object.keys(LTYPES).sort(()=>Math.random()-.5);$("lkLabels").innerHTML=keys.map(k=>`<div class="lbl" data-t="${k}">${LTYPES[k].name}</div>`).join("");
  $("lkLabels").querySelectorAll(".lbl").forEach(el=>setupDrag(el,$("lkSlot"),labelDrop));
  $("lkPair").querySelectorAll("[data-peek]").forEach(b=>b.onclick=()=>{const f=+b.dataset.peek;$("lkPeek").innerHTML=`<div class="ftext"><b>Fiche ${f} · ${esc(FICHES[f].title)}</b><br>${ficheHTML(f)}</div>`;});
@@ -1155,16 +1399,18 @@ function setupDrag(el,slot,onDrop){
   window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});}
 function labelDrop(el){const t=el.dataset.t,L=LK.L;
  if(t===L.t){SND.good();LK.step=2;$("lkSlot").className="slot good";$("lkSlot").innerHTML=`<div class="lbl">${LTYPES[t].name}</div>`;el.remove();
-  $("lkMsg").textContent="";$("lkStep2").classList.remove("hide");$("lkQ").textContent=linkQ(L);setTimeout(()=>$("lkIn").focus(),60);}
+  $("lkMsg").textContent="";$("lkStep2").classList.remove("hide");$("lkQ").textContent=LIENS.q(L);setTimeout(()=>$("lkIn").focus(),60);}
  else{SND.bad();LK.wrong++;$("lkSlot").classList.add("shake");setTimeout(()=>$("lkSlot").classList.remove("shake"),400);
   $("lkMsg").className="msg ko";$("lkMsg").innerHTML=`Pas tout à fait. ${LTYPES[t].why} Est-ce le cas ici ? Relis les deux fiches.`;}}
 const kwNorm=s=>stripAcc(String(s).toLowerCase()).replace(/[-']/g," ").replace(/[^a-z0-9° ]/g," ").replace(/\s+/g," ").trim();
-function linkAnswer(v){const L=LK.L,n=kwNorm(v);if(!n)return false;return L.exact?L.kw.some(k=>n===k):L.kw.some(k=>n.includes(kwNorm(k)));}
+function linkAnswer(v){return LIENS.match(v,LK.L);}
 $("lkOk").onclick=()=>{if(!LK||LK.step!==2)return;const v=$("lkIn").value;
- if(linkAnswer(v)){const L=LK.L;LK.done=true;S.links[L.key]=today();save();powerRails(L.key,true);SND.good();closePanel("link");
-  const ws=worldState(L.w);toast(`⚡ Réseau alimenté ! Liens ${ws.links}/${ws.nl}`);updateHUD();
-  if(ws.awake&&!ws.beaten)setTimeout(()=>{SND.wake();refreshGolem(L.w);GOLEMS[L.w].g.userData.shake=1;pop("⚔️ Le gardien se réveille !","<p>Le réseau est complet. Le gardien de ce monde veut te tester.</p><p>Il te donne le titre ou le début d'une fiche. Tu dois taper toute la fiche avant la fin du temps. Tu as 3 cœurs.</p>",[{t:"⚔️ Combattre",fn:()=>startBoss(L.w)},{t:"Plus tard",cls:""}]);},900);}
- else{SND.bad();LK.wrong++;$("lkMsg").className="msg ko";$("lkMsg").textContent="Ce n'est pas ça. Relis les deux fiches, puis réessaie.";}};
+ if(linkAnswer(v)){const L=LK.L;LK.done=true;LK.step=3;S.links[L.key]=today();save();powerRails(L.key,true);SND.good();
+  $("lkStep2").classList.add("hide");$("lkMsg").textContent="";$("lkWhyT").innerHTML=`<b>✅ Bien vu ! Voici le lien :</b>${esc(L.ex||"")}`;$("lkWhy").classList.remove("hide");}
+ else{SND.bad();LK.wrong++;$("lkMsg").className="msg ko";$("lkMsg").textContent="Ce n'est pas ça. Relis les deux fiches, puis réessaie."+(LK.wrong>=2?" Regarde le mot qui revient dans les deux fiches.":"");}};
+$("lkDone").onclick=()=>{if(!LK||!LK.done)return;const L=LK.L;SND.click();closePanel("link");
+ const ws=worldState(L.w);toast(`⚡ Réseau alimenté ! Liens ${ws.links}/${ws.nl}`);updateHUD();
+ if(ws.awake&&!ws.beaten)setTimeout(()=>{SND.wake();refreshGolem(L.w);GOLEMS[L.w].g.userData.shake=1;pop("⚔️ Le gardien se réveille !","<p>Le réseau est complet. Le gardien de ce monde veut te tester.</p><p>Il te donne le titre ou le début d'une fiche. Tu dois taper toute la fiche avant la fin du temps. Tu as 3 cœurs.</p>",[{t:"⚔️ Combattre",fn:()=>startBoss(L.w)},{t:"Plus tard",cls:""}]);},900);};
 $("lkIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("lkOk").click();}});
 function linkClosed(){if(LK&&!LK.done){removeRails(LK.L.key,true);}LK=null;}
 /* ---------- FORGE DES MOTS ---------- */
@@ -1184,7 +1430,7 @@ function renderForge(){const f=FG.f,F=FICHES[f],s=FS(f);FG.res=false;
  else if(FG.pass===2||FG.pass===3){if(!FG.gaps)FG.gaps=pickGaps(f,FG.pass,FG.seed);
   html=T.map((t,i)=>{if(FG.gaps.has(i)){const w=Math.max(3,t.c.length)+1.5;return `<input class="gap" data-i="${i}" style="width:${w}ch" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">`;}return wordBlock(t,"stone");}).join("");}
  else html=`<div class="title4">« ${esc(F.title)} »</div><div style="opacity:.8">${F.t==="D"?"C'est une définition (cadre vert).":"C'est une propriété (cadre rouge)."}</div>`;
- $("fBoard").innerHTML=html;
+ $("fBoard").innerHTML=html;SCH.mount($("fSch"),f);
  const typing=FG.pass===1||FG.pass===4;$("fTyping").classList.toggle("hide",!typing);$("fText").value="";
  $("fMsg").textContent="";$("fMsg").className="msg";$("fGo").classList.remove("hide");$("fAgain").classList.add("hide");$("fNext").classList.add("hide");
  const gaps=[...$("fBoard").querySelectorAll("input.gap")];
@@ -1256,6 +1502,7 @@ function nextRound(){
  DU.cur=DU.queue.shift();const f=DU.cur,F=FICHES[f];
  const useStart=DU.mode==="boss"&&Math.random()<.5;
  $("dBubble").innerHTML=useStart?`🗿 Continue la fiche ${f} : « ${esc(firstWords(f))} … »<small>Tape toute la fiche, du premier mot au dernier.</small>`:`🗿 Récite la fiche ${f} : « ${esc(F.title)} »<small>${F.t==="D"?"Une définition.":"Une propriété."} Tape toute la fiche.</small>`;
+ SCH.mount($("dSch"),f);
  $("dHearts").textContent="❤️".repeat(DU.hearts)+"🖤".repeat(3-DU.hearts);$("dHP").firstElementChild.style.width=(DU.hp/DU.hpMax*100)+"%";
  $("dCount").textContent=DU.mode==="boss"?`Gardien : ${DU.hp}/${DU.hpMax}`:`Reste : ${DU.queue.length+1}`;
  $("dIn").value="";$("dIn").classList.remove("hide");$("dSym").classList.remove("hide");$("dRes").classList.add("hide");$("dMsg").textContent="";$("dMsg").className="msg";
@@ -1295,7 +1542,7 @@ function reviewEnd(){DU.on=false;closePanel("duel");SND.win();pop("🔁 Révisio
 $("dIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();$("dGo").click();}});
 /* ---------- COFFRE ---------- */
 function openInv(){$("invBody").innerHTML=WORLDS.map((w,i)=>`<div class="wh" style="color:${w.css}">${w.bonus?"Bonus":"Monde "+(i+1)} · ${esc(w.name)}</div><div class="inv">`+w.fiches.map(f=>{const s=FS(f);return s.forged?`<button class="slotI" data-f="${f}"><img src="${iconURL(f)}" alt=""><b>${f}</b></button>`:`<div class="slotI empty">?<b>${f}</b></div>`;}).join("")+"</div>").join("");
- $("invText").innerHTML="";$("invBody").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{const f=+b.dataset.f;SND.click();$("invText").innerHTML=`<div class="ftext"><b>${itemOf(f).name} · Fiche ${f} · ${esc(FICHES[f].title)}</b><br>${ficheHTML(f)}</div>`;});openPanel("inv");}
+ $("invText").innerHTML="";$("invBody").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{const f=+b.dataset.f;SND.click();$("invText").innerHTML=`<div class="ftext"><b>${itemOf(f).name} · Fiche ${f} · ${esc(FICHES[f].title)}</b><br>${ficheHTML(f)}</div>${SCH.has(f)?`<div class="schslot">${SCH.box(f)}</div>`:""}`;});openPanel("inv");}
 /* ---------- ESPACE PARENT ---------- */
 let GATE=null;
 function openGate(){const a=6+(Math.random()*4|0),b=6+(Math.random()*4|0);GATE=a*b;$("gQ").textContent=`Pour entrer, combien font ${a} × ${b} ?`;$("gIn").value="";$("gMsg").textContent="";openPanel("gate");setTimeout(()=>$("gIn").focus(),60);}
@@ -1332,8 +1579,8 @@ placePlayer(S.world);camFor(S.world);CAM.target.copy(islandCenter(S.world));CAM.
 updateHUD();requestAnimationFrame(loop);
 $("bPlay").onclick=()=>{IOSAU.unlock();SND.good();$("title").classList.remove("on");$("hud").classList.remove("hide");started=true;CAM.auto=false;
  const ws=worldState(S.world);if(!ws.forged&&S.world===0)toast("⛏️ Touche une enclume pour forger ta première fiche.",4500);else if(dueList().length)toast(`🔁 ${dueList().length} fiche${dueList().length>1?"s":""} à réviser aujourd'hui.`,4000);};
-window.__fg={S:()=>S,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,
- stationScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
+window.__fg={LIENS,railMode:()=>railMode,S:()=>S,FS,nextRound,renderForge,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,
+ stationScreen:f=>{const r=FW[f]===S.world&&(window.__signRects||[]).find(r=>r.f===f);return r?[(r.l+r.r)/2,(r.t+r.b)/2]:screenOf(STN[f].pos.clone().add(new V3(0,1.2,0)));},anvilScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
  fps:()=>{const a=FPS.frames;return a.length?Math.round(a.length/a.reduce((x,y)=>x+y,0)):0;},player:()=>P.g.position.toArray(),pickAt:(x,y)=>{const h=pick(x,y,stationHits.concat(golemHits));const g=pick(x,y,groundMeshes);return {h:h&&h.object.userData,g:g&&g.point.toArray(),started,panelOpen};},groundScreen:(dx,dz)=>{const isl=ISL[S.world],x=isl.cx+dx,z=isl.cz+dz;return screenOf(new V3(x,groundY(x,z),z));},rails:()=>Object.keys(RAILS),calls:()=>renderer.info.render.calls};
 
 /* ---- micro et Papa écoute ---- */
@@ -1344,6 +1591,7 @@ VOIX.attach("duel",{field:$("dIn"),fiche:()=>DU.cur,canRedo:()=>false,
  papa:(g,f)=>{duelAnswer(false);papaNote(f,{coeur:"parcoeur",presque:"difficile",revoir:"nonsu"}[g]);save();},
  pause:()=>{if(!DU._p){DU._p=performance.now();DU._wasP=DU.paused;DU.paused=true;}},
  resume:()=>{if(DU._p){DU.t0+=performance.now()-DU._p;DU._p=0;DU.paused=DU._wasP;}}});
+VOIX.attach("link",{field:$("lkIn"),fiche:()=>null,papaOK:()=>false,canRedo:()=>false,papa:()=>{}});
 window.__voix=VOIX;
 
 </script></body></html>
