@@ -1003,8 +1003,8 @@ const LIENS=(()=>{
    <p class="lnbubx">${esc(L.ex||"")}</p>
    ${r?`<p class="lnbubr"><b>Ta raison :</b> ${esc(r)}</p>`:""}
    <div class="lnbtns"><button type="button" class="lnok" id="lnBubOk">Fermer</button></div></div>`;}
- function openBubble(L,reason){let ov=document.getElementById("lnBub");if(!ov){ov=document.createElement("div");ov.id="lnBub";document.body.appendChild(ov);ov.addEventListener("click",e=>{if(e.target===ov)closeBubble();});}
-  ov.innerHTML=bubbleHTML(L,reason==null?reasonOf(L.key):reason);ov.classList.add("on");ov.scrollTop=0;const ok=document.getElementById("lnBubOk");if(ok)ok.onclick=()=>closeBubble();}
+ function openBubble(L,reason){let ov=document.getElementById("lnBub");if(!ov){ov=document.createElement("div");ov.id="lnBub";document.body.appendChild(ov);ov.addEventListener("click",e=>{if(e.target===ov&&performance.now()-(ov._t||0)>500)closeBubble();});}
+  ov.innerHTML=bubbleHTML(L,reason==null?reasonOf(L.key):reason);ov.classList.add("on");ov._t=performance.now();ov.scrollTop=0;const ok=document.getElementById("lnBubOk");if(ok)ok.onclick=()=>closeBubble();}
  function closeBubble(){const ov=document.getElementById("lnBub");if(!ov||!ov.classList.contains("on"))return;ov.classList.remove("on");ov.innerHTML="";}
  function isBubbleOpen(){const ov=document.getElementById("lnBub");return !!(ov&&ov.classList.contains("on"));}
  /* pastilles sur la carte : icône au milieu du rail, écartées si elles se chevauchent */
@@ -1017,7 +1017,9 @@ const LIENS=(()=>{
   for(let k=0;k<10;k++){for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[j].x-pts[i].x,dy=pts[j].y-pts[i].y,d=Math.hypot(dx,dy)||.01;
     if(d<min){const push=(min-d)/2,ux=dx/d,uy=dy/d;pts[i].x-=ux*push;pts[i].y-=uy*push;pts[j].x+=ux*push;pts[j].y+=uy*push;}}}
   const Lft=MARK+8,Rgt=(typeof innerWidth==="number"?innerWidth:800)-MARK-8,Top=70,Bot=(typeof innerHeight==="number"?innerHeight:600)-96;
-  for(const p of pts){p.x=Math.max(Lft,Math.min(Rgt,p.x));p.y=Math.max(Top,Math.min(Bot,p.y));}
+  const clamp=()=>{for(const p of pts){p.x=Math.max(Lft,Math.min(Rgt,p.x));p.y=Math.max(Top,Math.min(Bot,p.y));}};clamp();
+  for(let k=0;k<12;k++){let moved=false;for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[j].x-pts[i].x,dy=pts[j].y-pts[i].y,d=Math.hypot(dx,dy)||.01;
+    if(d<min){moved=true;const push=(min-d)/2+.5,ux=dx/d,uy=dy/d;pts[i].x-=ux*push;pts[i].y-=uy*push;pts[j].x+=ux*push;pts[j].y+=uy*push;}}clamp();if(!moved)break;}
   return pts;}
  function marksHost(){let d=document.getElementById("lnMarks");if(!d){d=document.createElement("div");d.id="lnMarks";const h=document.getElementById("hud");(h||document.body).appendChild(d);}return d;}
  function placeMarks(pts,onTap){const host=marksHost();
