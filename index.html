@@ -501,11 +501,37 @@ function worldState(i){const w=WORLDS[i];const forged=w.fiches.filter(f=>FS(f).f
  return {forged,n:w.fiches.length,links:lk,nl:L.length,awake:forged===w.fiches.length&&lk===L.length,beaten:!!S.boss[w.id],unlocked:i<S.unlocked};}
 
 /* ================= SONS (WebAudio, générés) ================= */
+/* ===== Déblocage du son sur iPad (partagé entre les jeux) =====
+   1. Le contexte audio est créé et relancé dans un vrai geste (touchend, pointerup, click...).
+   2. On le relance à chaque geste et au retour dans l'appli (iOS le met en « interrupted »).
+   3. Le bouton silencieux de l'iPad coupe WebAudio : session audio « playback » (Safari 16.4+),
+      sinon un petit son muet en boucle dans une balise audio. */
+window.__snd=window.__snd||{state:"none",count:{},log:[],played:0,unlocks:0};
+const IOSAU={get:null,el:null,unlocked:false,
+ session(){try{if(navigator.audioSession&&navigator.audioSession.type!=="playback")navigator.audioSession.type="playback";}catch(e){}},
+ setup(get){this.get=get;this.session();
+  ["touchstart","touchend","pointerdown","pointerup","mousedown","click","keydown"].forEach(ev=>document.addEventListener(ev,()=>this.unlock(),{capture:true,passive:true}));
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")this.resume();});
+  window.addEventListener("pageshow",()=>this.resume());window.addEventListener("focus",()=>this.resume());},
+ watch(c){if(c&&!c.__w){c.__w=1;__snd.state=c.state;c.addEventListener("statechange",()=>{__snd.state=c.state;});}return c;},
+ resume(){const c=this.get&&this.get(false);if(!c||c.state==="running"||c.state==="closed")return;try{const p=c.resume();if(p&&p.then)p.then(()=>{__snd.state=c.state;},()=>{});}catch(e){}},
+ unlock(){const c=this.get&&this.get(true);if(!c)return;this.watch(c);this.session();
+  if(c.state!=="running"||!this.unlocked){this.resume();try{const b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0);this.unlocked=true;__snd.unlocks++;}catch(e){}}
+  if(!navigator.audioSession)this.silentLoop();},
+ silentURL(){const sr=8000,n=4000,b=new ArrayBuffer(44+n*2),v=new DataView(b);let o=0;const s=t=>{for(const ch of t)v.setUint8(o++,ch.charCodeAt(0));},u32=x=>{v.setUint32(o,x,true);o+=4;},u16=x=>{v.setUint16(o,x,true);o+=2;};
+  s("RIFF");u32(36+n*2);s("WAVE");s("fmt ");u32(16);u16(1);u16(1);u32(sr);u32(sr*2);u16(2);u16(16);s("data");u32(n*2);return URL.createObjectURL(new Blob([b],{type:"audio/wav"}));},
+ silentLoop(){try{if(!this.el){const a=document.createElement("audio");a.src=this.silentURL();a.loop=true;a.preload="auto";a.setAttribute("playsinline","");a.setAttribute("webkit-playsinline","");a.setAttribute("x-webkit-airplay","deny");this.el=a;}
+  if(this.el.paused){const p=this.el.play();if(p&&p.catch)p.catch(()=>{});}}catch(e){}},
+ /* compteur de débogage : chaque son demandé est compté dans window.__snd */
+ instrument(SND){Object.keys(SND).forEach(k=>{const f=SND[k];if(typeof f!=="function")return;SND[k]=function(...a){__snd.count[k]=(__snd.count[k]||0)+1;__snd.log.push(k);if(__snd.log.length>300)__snd.log.shift();return f.apply(this,a);};});return SND;}
+};
 const AU={ctx:null,master:null,
- init(){if(this.ctx)return;try{const C=window.AudioContext||window.webkitAudioContext;this.ctx=new C();this.master=this.ctx.createGain();this.master.gain.value=.5;this.master.connect(this.ctx.destination);}catch(e){}},
- resume(){if(this.ctx&&this.ctx.state!=="running")this.ctx.resume();},
- tone(f,d,type="square",vol=.2,f2=null,delay=0){if(!this.ctx||!S.sound)return;const t=this.ctx.currentTime+delay,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(this.master);o.start(t);o.stop(t+d+.02);},
- noise(d,vol=.2,freq=1200,type="bandpass",delay=0){if(!this.ctx||!S.sound)return;const t=this.ctx.currentTime+delay,len=Math.max(1,Math.floor(this.ctx.sampleRate*d)),b=this.ctx.createBuffer(1,len,this.ctx.sampleRate),a=b.getChannelData(0);for(let i=0;i<len;i++)a[i]=(Math.random()*2-1)*(1-i/len);const s=this.ctx.createBufferSource();s.buffer=b;const fl=this.ctx.createBiquadFilter();fl.type=type;fl.frequency.value=freq;const g=this.ctx.createGain();g.gain.value=vol;s.connect(fl);fl.connect(g);g.connect(this.master);s.start(t);}
+ init(){if(this.ctx)return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;try{this.ctx=new C({latencyHint:"interactive"});}catch(e){try{this.ctx=new C();}catch(e2){return;}}
+  const cp=this.ctx.createDynamicsCompressor();cp.threshold.value=-12;cp.ratio.value=5;this.master=this.ctx.createGain();this.master.gain.value=.75;this.master.connect(cp);cp.connect(this.ctx.destination);},
+ resume(){IOSAU.resume();},
+ ok(){const r=!!(this.ctx&&S.sound&&this.ctx.state==="running");if(r)__snd.played++;else if(this.ctx&&S.sound)IOSAU.resume();return r;},
+ tone(f,d,type="square",vol=.2,f2=null,delay=0){if(!this.ok())return;const t=this.ctx.currentTime+delay,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(this.master);o.start(t);o.stop(t+d+.02);},
+ noise(d,vol=.2,freq=1200,type="bandpass",delay=0){if(!this.ok())return;const t=this.ctx.currentTime+delay,len=Math.max(1,Math.floor(this.ctx.sampleRate*d)),b=this.ctx.createBuffer(1,len,this.ctx.sampleRate),a=b.getChannelData(0);for(let i=0;i<len;i++)a[i]=(Math.random()*2-1)*(1-i/len);const s=this.ctx.createBufferSource();s.buffer=b;const fl=this.ctx.createBiquadFilter();fl.type=type;fl.frequency.value=freq;const g=this.ctx.createGain();g.gain.value=vol;s.connect(fl);fl.connect(g);g.connect(this.master);s.start(t);}
 };
 const SND={
  click(){AU.tone(660,.05,"square",.08)},
@@ -524,8 +550,15 @@ const SND={
  step(){AU.noise(.05,.08,700,"lowpass")},
  win(){[392,523,659,784,1047,1319].forEach((f,i)=>AU.tone(f,.25,"square",.12,null,i*.12));AU.tone(1568,.9,"triangle",.12,null,.8)},
  wake(){AU.tone(60,1.2,"sawtooth",.18,120);AU.noise(1,.2,200,"lowpass")},
- lose(){[392,349,311,262].forEach((f,i)=>AU.tone(f,.3,"square",.12,null,i*.2))}
+ lose(){[392,349,311,262].forEach((f,i)=>AU.tone(f,.3,"square",.12,null,i*.2))},
+ hint(){[660,880,1320].forEach((f,i)=>AU.tone(f,.14,"sine",.14,null,i*.07));AU.tone(1760,.25,"sine",.07,null,.2)},
+ nudge(){AU.tone(520,.08,"sine",.14);AU.tone(440,.1,"sine",.12,null,.08)},
+ locked(){AU.noise(.12,.4,300,"lowpass");AU.tone(150,.12,"square",.12);AU.tone(120,.15,"square",.1,null,.1)},
+ timeout(){[880,660,880,660].forEach((f,i)=>AU.tone(f,.11,"square",.09,null,i*.13))},
+ unlock(){AU.noise(.2,.4,300,"lowpass");AU.tone(200,.5,"sawtooth",.07,800,.1);[784,988,1175,1568].forEach((f,i)=>AU.tone(f,.25,"sine",.15,null,.55+i*.09))},
+ papa(){AU.noise(.1,.5,400,"lowpass");AU.tone(90,.2,"sine",.3);AU.tone(880,.15,"triangle",.08,null,.12)}
 };
+IOSAU.setup(c=>{if(c)AU.init();return AU.ctx;});IOSAU.instrument(SND);
 
 /* ================= TEXTURES PIXEL (procédurales) ================= */
 function cvs(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return c}
@@ -767,7 +800,7 @@ function onResize(){const w=window.innerWidth,h=window.innerHeight;renderer.setS
 window.addEventListener("resize",onResize);if(window.visualViewport)visualViewport.addEventListener("resize",onResize);onResize();
 /* gestes */
 const cv=$("cv");const PTR=new Map();let down=null,pinch=null;
-cv.addEventListener("pointerdown",e=>{AU.init();AU.resume();try{cv.setPointerCapture(e.pointerId)}catch(_){}PTR.set(e.pointerId,{x:e.clientX,y:e.clientY});
+cv.addEventListener("pointerdown",e=>{IOSAU.unlock();try{cv.setPointerCapture(e.pointerId)}catch(_){}PTR.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(PTR.size===1)down={x:e.clientX,y:e.clientY,t:performance.now(),mv:0};else{down=null;const [a,b]=[...PTR.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),dist:CAM.tDist};}});
 cv.addEventListener("pointermove",e=>{const p=PTR.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
  if(PTR.size===1){CAM.theta-=dx*.007;CAM.phi=Math.max(.35,Math.min(1.38,CAM.phi-dy*.005));CAM.auto=false;if(down)down.mv+=Math.abs(dx)+Math.abs(dy);}
@@ -845,11 +878,11 @@ function updateHUD(){const i=S.world,w=WORLDS[i],ws=worldState(i);
  const due=dueList().length;$("bRev").classList.toggle("hide",!due);$("revN").textContent=due;
  $("bSnd").textContent=S.sound?"🔊":"🔇";}
 function setWorld(i){i=Math.max(0,Math.min(WORLDS.length-1,i));S.world=i;save();placePlayer(i);camFor(i);CAM.fly=1.5;railMode=false;clearSel();updateHUD();
- const ws=worldState(i);if(!ws.unlocked)toast("🔒 Ce monde est fermé. Bats d'abord le gardien du monde précédent.");}
+ const ws=worldState(i);if(!ws.unlocked){SND.locked();}if(!ws.unlocked)toast("🔒 Ce monde est fermé. Bats d'abord le gardien du monde précédent.");}
 $("wPrev").onclick=()=>{SND.click();setWorld(S.world-1)};$("wNext").onclick=()=>{SND.click();setWorld(S.world+1)};
-$("bSnd").onclick=()=>{S.sound=!S.sound;save();updateHUD();SND.click();};
+$("bSnd").onclick=()=>{S.sound=!S.sound;save();updateHUD();if(S.sound){IOSAU.unlock();SND.click();}};
 $("bRails").onclick=()=>{SND.click();railMode=!railMode;clearSel();updateHUD();if(railMode)toast("🛤️ Touche une enclume, puis une autre fiche qui va avec.<br>Les deux fiches doivent être forgées.",4000);};
-$("bHint").onclick=()=>{SND.click();const i=S.world;const L=LINKS.filter(l=>l.w===i&&!S.links[l.key]);const ok=L.find(l=>FS(l.a).forged&&FS(l.b).forged);
+$("bHint").onclick=()=>{SND.hint();const i=S.world;const L=LINKS.filter(l=>l.w===i&&!S.links[l.key]);const ok=L.find(l=>FS(l.a).forged&&FS(l.b).forged);
  if(!L.length)return toast("Le réseau de ce monde est complet !");if(!ok)return toast("Forge d'abord d'autres fiches de ce monde.");
  const f=Math.random()<.5?ok.a:ok.b;burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffe060,22);toast(`💡 La fiche ${f} attend encore un lien. Avec quelle fiche va-t-elle ?`,4000);};
 $("bDuel").onclick=()=>{SND.click();startBoss(S.world)};
@@ -864,20 +897,20 @@ function onTap(x,y){if(panelOpen||!started)return;
  const g=pick(x,y,groundMeshes);if(!g||railMode)return;const isl=ISL[S.world];
  if(Math.hypot(g.point.x-isl.cx,g.point.z-isl.cz)<isl.R-1&&HM.has(hk(Math.round(g.point.x),Math.round(g.point.z))))walkTo(g.point.x,g.point.z);}
 function tapStation(f){const wi=FW[f];if(wi!==S.world)return;const ws=worldState(wi);
- if(!ws.unlocked)return toast("🔒 Ce monde est fermé.");
+ if(!ws.unlocked){SND.locked();return toast("🔒 Ce monde est fermé.");}
  if(railMode)return railTap(f);
  const s=STN[f],isl=s.isl,dir=new V3(isl.cx-s.pos.x,0,isl.cz-s.pos.z).normalize();
  SND.click();walkTo(s.pos.x+dir.x*1.4,s.pos.z+dir.z*1.4,()=>{P.g.rotation.y=Math.atan2(s.pos.x-P.g.position.x,s.pos.z-P.g.position.z);SND.anvil();burst(s.pos.clone().add(new V3(0,1.5,0)),0xffc040,8);openForge(f);});}
-function tapGolem(i){if(i!==S.world)return;const ws=worldState(i);if(!ws.unlocked)return toast("🔒 Ce monde est fermé.");
+function tapGolem(i){if(i!==S.world)return;const ws=worldState(i);if(!ws.unlocked){SND.locked();return toast("🔒 Ce monde est fermé.");}
  if(ws.awake){startBoss(i);return;}
- toast(`💤 Zzz… Forge toutes les fiches (${ws.forged}/${ws.n}) et relie tout le réseau (${ws.links}/${ws.nl}) pour me réveiller.`,4200);}
+ SND.nudge();toast(`💤 Zzz… Forge toutes les fiches (${ws.forged}/${ws.n}) et relie tout le réseau (${ws.links}/${ws.nl}) pour me réveiller.`,4200);}
 /* ---------- rails ---------- */
 let LK=null;
 function railTap(f){if(!FS(f).forged){SND.bad();return toast(`Forge d'abord la fiche ${f}.`);}
  if(!railSel){railSel=f;STN[f].sign.scale.set(2.5,1.5,1);SND.click();burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffe060,10);return toast(`Fiche ${f} choisie. Touche l'autre fiche à relier.`);}
- if(railSel===f){clearSel();return toast("Choix annulé.");}
+ if(railSel===f){clearSel();SND.click();return toast("Choix annulé.");}
  const a=railSel,b=f;clearSel();const L=findLink(a,b);
- if(L&&S.links[L.key])return toast(`Les fiches ${a} et ${b} sont déjà reliées. ⚡`);
+ if(L&&S.links[L.key]){SND.nudge();}if(L&&S.links[L.key])return toast(`Les fiches ${a} et ${b} sont déjà reliées. ⚡`);
  const A=L?L.a:a,B=L?L.b:b;const R=layRails(A,B,true,false);const dur=R.tiles.length*55+450;
  setTimeout(()=>{if(!L){removeRails(R.key,true);SND.breakR();S.stats.badLinks++;save();toast(`💥 Les rails cassent. Les fiches ${a} et ${b} ne sont pas reliées directement.<br>Cherche un mot en commun ou une phrase jumelle.`,4500);}
   else openLink(L);},dur);}
@@ -962,10 +995,10 @@ function checkForge(){if(FG.res)return;const f=FG.f,s=FS(f);let res;
    if(!u.length){ops.push({k:"mi",r:t});err++;return;}const e=u.length===1?eqTok(t,u[0]):0;
    if(e===2)ops.push({k:"ok",r:t});else if(e===1){ops.push({k:"mn",r:t,u:u[0]});minor++;}else{ops.push({k:"wr",r:t,u:{c:u.map(x=>x.c).join(" ")}});err++;}});
   res={ops,err,minor,soft:[],ok:err===0};}
- else{const txt=$("fText").value;if(!txt.trim()){$("fMsg").className="msg ko";$("fMsg").textContent="Tape la fiche avant de frapper l'enclume.";return;}res=diff(REF[f],tokenize(txt,true));}
+ else{const txt=$("fText").value;if(!txt.trim()){$("fMsg").className="msg ko";$("fMsg").textContent="Tape la fiche avant de frapper l'enclume.";SND.nudge();return;}res=diff(REF[f],tokenize(txt,true));}
  FG.res=true;SND.anvil();$("fBoard").innerHTML=resultHTML(res.ops);$("fTyping").classList.add("hide");playResultSounds(res.ops);$("fGo").classList.add("hide");
  s.minor+=res.minor;const mnote=res.minor?` Attention à ${res.minor} petite${res.minor>1?"s":""} faute${res.minor>1?"s":""} (bloc de fer orange).`:"";
- if(FG.practice){schedule(f,res.ok);logEv(f,"entrainement",res.ok);if(!res.ok)s.errR+=1;save();
+ if(FG.practice){setTimeout(()=>res.ok?SND.good():SND.bad(),500);schedule(f,res.ok);logEv(f,"entrainement",res.ok);if(!res.ok)s.errR+=1;save();
   $("fMsg").className="msg "+(res.ok?"ok":"ko");$("fMsg").textContent=res.ok?okMsg(res,"Parfait ! La fiche est toujours solide."+mnote):koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Cette fiche reviendra demain.`);
   $("fAgain").classList.remove("hide");$("fAgain").textContent="🔁 Réessayer";updateHUD();return;}
  if(res.ok){s.pass=FG.pass+1;s.seed=0;save();refreshStation(f);
@@ -1015,7 +1048,7 @@ function duelAnswer(timeout){if(DU.paused)return;DU.paused=true;clearInterval(DU
  if(DU.mode==="boss"){
   if(ok){DU.hp--;DU.wins++;SND.hit();const g=GOLEMS[DU.wi];g.g.userData.shake=1;burst(g.g.position.clone().add(new V3(0,2.5,0)),0x9a9a9a,18);
    $("dMsg").className="msg ok";$("dMsg").textContent="💥 Touché !"+softNote(res)+` Le gardien perd un bloc.${res.minor?" Attention aux petites fautes en orange.":""}`;logEv(f,"gardien",true);}
-  else{DU.hearts--;DU.fails++;SND.hurt();s.errB+=1;s.missBoss=(s.missBoss||0)+1;schedule(f,false);logEv(f,"gardien",false);
+  else{DU.hearts--;DU.fails++;if(timeout)SND.timeout();SND.hurt();s.errB+=1;s.missBoss=(s.missBoss||0)+1;schedule(f,false);logEv(f,"gardien",false);
    DU.queue.splice(Math.min(1,DU.queue.length),0,f);
    $("dMsg").className="msg ko";$("dMsg").textContent=(timeout?"⏰ Temps écoulé ! ":koMsg(res,""))+`Tu perds un cœur. Les mots verts sont les bons. Cette fiche va revenir.`;}
   $("dHearts").textContent="❤️".repeat(Math.max(0,DU.hearts))+"🖤".repeat(3-Math.max(0,DU.hearts));$("dHP").firstElementChild.style.width=(DU.hp/DU.hpMax*100)+"%";$("dCount").textContent=`Gardien : ${DU.hp}/${DU.hpMax}`;
@@ -1024,12 +1057,12 @@ function duelAnswer(timeout){if(DU.paused)return;DU.paused=true;clearInterval(DU
   else{SND.bad();DU.fails++;s.errR+=1;save();if(!DU.done.has(f)){DU.done.add(f);DU.queue.push(f);}$("dMsg").className="msg ko";$("dMsg").textContent=koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Lis bien les mots verts. Elle revient à la fin, puis demain.`);}
   $("dNext").textContent=DU.queue.length?"Fiche suivante ➜":"Terminer ➜";}
  save();updateHUD();}
-$("dGo").onclick=()=>{if(!$("dIn").value.trim()){$("dMsg").className="msg ko";$("dMsg").textContent="Tape la fiche d'abord.";return;}duelAnswer(false);};
+$("dGo").onclick=()=>{if(!$("dIn").value.trim()){$("dMsg").className="msg ko";$("dMsg").textContent="Tape la fiche d'abord.";SND.nudge();return;}duelAnswer(false);};
 $("dNext").onclick=()=>{SND.click();if(DU.mode==="boss"&&DU.lost)return bossLose();nextRound();};
 $("dQuit").onclick=()=>{SND.click();clearInterval(DU.iv);DU.paused=true;DU.on=false;closePanel("duel");if(DU.mode==="boss")toast("Tu as quitté le duel. Reviens quand tu veux !");};
 function bossWin(){clearInterval(DU.iv);DU.on=false;closePanel("duel");const w=WORLDS[DU.wi],first=!S.boss[w.id];S.boss[w.id]=today();
  const before=S.unlocked;S.unlocked=Math.min(WORLDS.length,Math.max(S.unlocked,DU.wi+2));save();GOLEMS.forEach((_,i)=>refreshGolem(i));SND.win();updateHUD();
- const nx=WORLDS[DU.wi+1];const opened=S.unlocked>before&&nx;
+ const nx=WORLDS[DU.wi+1];const opened=S.unlocked>before&&nx;if(S.unlocked>before)setTimeout(()=>SND.unlock(),1700);
  pop("🏆 Gardien vaincu !",`<p>Tu as récité toutes les fiches du monde ${esc(w.name)}.</p>`+(opened?`<p>🌉 Le monde <b>${esc(nx.name)}</b> est ouvert !</p>`:DU.wi===3?`<p>🎉 Les 4 mondes sont finis ! Le monde bonus Boîte à outils est ouvert.</p>`:"")+(DU.fails?`<p>Les fiches ratées reviendront demain en révision.</p>`:""),
   opened?[{t:`Aller au monde ${nx.name} ➜`,fn:()=>setWorld(DU.wi+1)},{t:"Rester ici",cls:""}]:[{t:"Super !"}]);}
 function bossLose(){clearInterval(DU.iv);DU.on=false;closePanel("duel");SND.lose();
@@ -1062,7 +1095,7 @@ function renderParent(){const due=dueList();
  <div style="overflow-x:auto"><table class="pt"><tr><th>Fiche</th><th>Monde</th><th>Maîtrise</th><th>Prochaine révision</th><th>Erreurs</th><th>Dernière fois</th><th>Note de papa</th><th>Noter la récitation</th></tr>${tr}</table></div>
  <h2 style="margin-top:14px">🛤️ Réseau</h2><p style="font-size:14px">${net}</p>
  <div class="row"><button class="mc" id="pUnlock">Ouvrir tous les mondes</button><button class="mc red" id="pReset">Tout effacer</button></div>`;
- $("pBody").querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{const f=+b.dataset.n;papaNote(f,b.dataset.k);SND.click();renderParent();updateHUD();toast(`Note enregistrée pour la fiche ${f}. Prochaine révision : ${frDate(FS(f).next)}.`);});
+ $("pBody").querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{const f=+b.dataset.n;papaNote(f,b.dataset.k);SND.papa();renderParent();updateHUD();toast(`Note enregistrée pour la fiche ${f}. Prochaine révision : ${frDate(FS(f).next)}.`);});
  $("pBody").querySelectorAll("[data-txt]").forEach(b=>b.onclick=()=>$("ptx"+b.dataset.txt).classList.toggle("hide"));
  $("pSortW").onclick=()=>{PSORT="weak";renderParent()};$("pSortN").onclick=()=>{PSORT="num";renderParent()};
  $("pUnlock").onclick=()=>{S.unlocked=WORLDS.length;save();GOLEMS.forEach((_,i)=>refreshGolem(i));updateHUD();renderParent();toast("Tous les mondes sont ouverts.");};
@@ -1073,7 +1106,7 @@ for(const L of LINKS)if(S.links[L.key])layRails(L.a,L.b,false,true);
 GOLEMS.forEach((_,i)=>refreshGolem(i));
 placePlayer(S.world);camFor(S.world);CAM.target.copy(islandCenter(S.world));CAM.dist=CAM.tDist+10;
 updateHUD();requestAnimationFrame(loop);
-$("bPlay").onclick=()=>{AU.init();AU.resume();SND.good();$("title").classList.remove("on");$("hud").classList.remove("hide");started=true;CAM.auto=false;
+$("bPlay").onclick=()=>{IOSAU.unlock();SND.good();$("title").classList.remove("on");$("hud").classList.remove("hide");started=true;CAM.auto=false;
  const ws=worldState(S.world);if(!ws.forged&&S.world===0)toast("⛏️ Touche une enclume pour forger ta première fiche.",4500);else if(dueList().length)toast(`🔁 ${dueList().length} fiche${dueList().length>1?"s":""} à réviser aujourd'hui.`,4000);};
 window.__fg={S:()=>S,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,
  stationScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
