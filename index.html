@@ -1,5 +1,5 @@
 <!doctype html><html lang="fr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mine Par Cœur"><meta name="theme-color" content="#3b3b3b">
 <title>La Mine du Par Cœur</title><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -1594,4 +1594,107 @@ VOIX.attach("duel",{field:$("dIn"),fiche:()=>DU.cur,canRedo:()=>false,
 VOIX.attach("link",{field:$("lkIn"),fiche:()=>null,papaOK:()=>false,canRedo:()=>false,papa:()=>{}});
 window.__voix=VOIX;
 
-</script></body></html>
+</script>
+
+
+
+
+
+
+<!--CLAVIER--><style>/* CLAVIER iPad : mode « clavier ouvert » */
+html.kb-on,html.kb-on body{overflow:hidden!important;overscroll-behavior:none}
+html.kb-on .kb-panel{z-index:9990!important}
+html.kb-on .kb-panel .schslot{max-height:calc(var(--kbh) * .22)!important;overflow:hidden}
+html.kb-on .kb-panel .schslot svg,html.kb-on .kb-panel .schslot img{max-height:calc(var(--kbh) * .2)!important;width:auto!important}
+html.kb-on .kb-panel textarea{min-height:64px!important;max-height:calc(var(--kbh) * .45)!important}
+html.kb-tight .kb-panel textarea{max-height:calc(var(--kbh) * .4)!important}
+html.kb-tight .kb-panel h1,html.kb-tight .kb-panel h2,html.kb-tight .kb-panel h3{font-size:1.05em!important;margin:2px 0!important}
+html.kb-on .kb-stick{position:sticky!important;bottom:0;z-index:20;padding-top:4px;padding-bottom:4px;box-shadow:0 -4px 10px rgba(0,0,0,.18)}
+html.kb-on .kb-lift{background:#fffdf3!important;color:#222!important;border:3px solid #333!important;border-radius:12px!important;padding:10px!important;box-shadow:0 8px 30px rgba(0,0,0,.45)!important;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+html.kb-on .kb-lift input,html.kb-on .kb-lift textarea{font-size:20px!important;min-width:60%;flex:1}
+html.kb-on .kb-squeeze,html.kb-on .kb-hidebtn{display:none!important}
+html.kb-on .kb-goonly{display:flex!important;flex-wrap:wrap;gap:8px;max-width:none!important;grid-template-columns:none!important}
+html.kb-on .kb-goonly>*{min-width:180px}
+</style><script>/* ===== CLAVIER iPad : garder la fenêtre de saisie visible au-dessus du clavier (partagé entre les jeux) =====
+   Sur iPad, le clavier prend environ la moitié de l'écran. Safari fait glisser la page et la fenêtre de saisie
+   se retrouve coupée en haut. Ici :
+   1. on suit window.visualViewport (resize, scroll) : c'est la zone vraiment visible au-dessus du clavier ;
+   2. la fenêtre qui contient le champ (panneau fixe, carte, écran) est replacée dans cette zone :
+      top = visualViewport.offsetTop, hauteur = visualViewport.height ;
+   3. le document ne défile plus (overflow caché, scrollTo(0,0)) ;
+   4. le schéma et la zone de texte sont réduits, la ligne de boutons « Valider » reste collée en bas,
+      et la zone défile pour montrer le champ et le texte tapé. */
+const KB={on:false,field:null,panel:null,saved:null,stick:null,fits:[],H0:0,raf:0,
+ editable(e){if(!e||e.disabled||e.readOnly)return false;if(e.isContentEditable)return true;const t=e.tagName;
+  if(t==="TEXTAREA")return true;if(t!=="INPUT")return false;const ty=(e.type||"text").toLowerCase();
+  return ["text","search","number","tel","email","url","password",""].includes(ty);},
+ vv(){const v=window.visualViewport;return v?{h:v.height,t:v.offsetTop||0}:{h:window.innerHeight,t:0};},
+ init(){this.H0=Math.max(window.innerHeight,document.documentElement.clientHeight||0);
+  document.addEventListener("focusin",e=>{if(!this.editable(e.target))return;this.field=e.target;this.kick();setTimeout(()=>this.kick(),120);setTimeout(()=>this.kick(),400);setTimeout(()=>this.kick(),900);},true);
+  document.addEventListener("focusout",()=>setTimeout(()=>{if(!this.editable(document.activeElement)){this.field=null;this.close();}},150),true);
+  document.addEventListener("input",e=>{if(e.target===this.field)this.kick();},true);
+  const v=window.visualViewport;if(v){v.addEventListener("resize",()=>this.kick());v.addEventListener("scroll",()=>this.kick());}
+  window.addEventListener("resize",()=>{if(!this.field)this.H0=Math.max(this.H0,window.innerHeight);this.kick();});
+  window.addEventListener("scroll",()=>{if(this.on)this.noScroll();},{passive:true});
+  window.addEventListener("orientationchange",()=>{this.H0=0;setTimeout(()=>{this.H0=window.innerHeight;this.kick();},500);});
+  setInterval(()=>{if(this.field||this.on)this.update();},500);},
+ kick(){cancelAnimationFrame(this.raf);this.raf=requestAnimationFrame(()=>this.update());},
+ noScroll(){if(window.scrollX||window.scrollY)window.scrollTo(0,0);const se=document.scrollingElement;if(se&&se.scrollTop)se.scrollTop=0;},
+ findPanel(f){let e=f.parentElement,screen=null;
+  while(e&&e!==document.body){if(e.hasAttribute("data-kb-panel"))return e;const cs=getComputedStyle(e);
+   if(cs.position==="fixed")return e;if(!screen&&(e.classList.contains("screen")||cs.position==="absolute"&&e.offsetHeight>=window.innerHeight*.8))screen=e;e=e.parentElement;}
+  return screen||document.body;},
+ update(){const f=this.field;if(!f||document.activeElement!==f||!f.isConnected){if(this.on)this.close();return;}
+  const {h,t}=this.vv(),H0=Math.max(this.H0,h);if(!this.H0)this.H0=window.innerHeight;
+  const kb=h<H0*.85||window.innerHeight<H0*.85;if(!kb){if(this.on)this.close();return;}
+  const de=document.documentElement;de.classList.add("kb-on");de.classList.toggle("kb-tight",h<520);
+  de.style.setProperty("--kbh",h+"px");de.style.setProperty("--kbt",t+"px");this.on=true;this.noScroll();
+  const p=this.findPanel(f);if(p!==this.panel){this.restore();this.panel=p;
+   const r=p.getBoundingClientRect();this.saved={css:p.getAttribute("style"),full:r.height>=window.innerHeight*.88||p===document.body,left:r.left,width:r.width};p.classList.add("kb-panel");}
+  const s=this.saved,m=s.full?0:4;
+  Object.assign(p.style,{position:"fixed",top:(t+m)+"px",bottom:"auto",left:s.left+"px",width:s.width+"px",right:"auto",transform:"none",
+   maxHeight:(h-2*m)+"px",height:s.full?(h-2*m)+"px":"",overflowY:"auto",webkitOverflowScrolling:"touch",margin:"0"});
+  if(f.tagName==="TEXTAREA"){if(this.taH==null||this.taEl!==f){this.taEl=f;this.taH=f.style.height;}f.style.height="auto";f.style.height=Math.min(f.scrollHeight+4,Math.round(h*(h<520?.4:.45)))+"px";f.scrollTop=f.scrollHeight;}
+  this.fitInner(p,t+m,t+h-m);this.markStick(f,p);this.reveal(f,p,t+m,t+h-m);for(let k=0;k<4&&this.squeeze(f,p);k++)this.reveal(f,p,t+m,t+h-m);this.liftCheck(f,t+m,t+h-m);},
+ squeeze(f,p){const st=this.stick;if(!st)return false;const sr=st.getBoundingClientRect();let did=false;this.squeezed=this.squeezed||[];
+  p.querySelectorAll("button,input,textarea,select,.symbar,[class*=sym]").forEach(e=>{if(did||!e.offsetParent||st.contains(e)||e===f||e.contains(f)||e.closest(".vx"))return;const r=e.getBoundingClientRect();
+   if(r.bottom>sr.top+1&&r.top<sr.bottom-1&&r.right>sr.left&&r.left<sr.right){let a=e;while(a.parentElement&&a.parentElement!==p&&!a.parentElement.contains(f)&&!a.parentElement.contains(st))a=a.parentElement;
+    if(a.contains(f)||a.contains(st)||a.classList.contains("vx"))return;a.classList.add("kb-squeeze");this.squeezed.push(a);did=true;}});return did;},
+
+ /* dernier recours : si le champ reste caché (petite boîte coincée sous autre chose), on soulève sa boîte en haut de la zone visible */
+ visible(f,top,bot){const r=f.getBoundingClientRect();if(r.top<top-1||r.bottom>bot+1||r.height<10)return false;const x=r.left+Math.min(r.width/2,30),y=r.top+Math.min(r.height/2,12);const e=document.elementFromPoint(x,y);return !!e&&(e===f||f.contains(e));},
+ liftCheck(f,top,bot){if(this.lift){Object.assign(this.lift.style,{top:(top+6)+"px",maxHeight:(bot-top-12)+"px"});return;}if(this.visible(f,top,bot))return;
+  let b=f.parentElement;while(b&&b.parentElement&&b.parentElement!==document.body&&b.parentElement.getBoundingClientRect().height<(bot-top)*.5&&!b.parentElement.classList.contains("kb-panel"))b=b.parentElement;
+  if(!b||b===document.body)return;this.lift=b;this.liftCss=b.getAttribute("style");b.classList.add("kb-lift");
+  Object.assign(b.style,{position:"fixed",left:"12px",right:"12px",width:"auto",top:(top+6)+"px",maxHeight:(bot-top-12)+"px",overflow:"auto",zIndex:"10000",transform:"none"});},
+ unlift(){if(this.lift){const b=this.lift;if(this.liftCss!=null)b.setAttribute("style",this.liftCss);else b.removeAttribute("style");b.classList.remove("kb-lift");this.lift=null;}},
+ /* les cartes internes qui défilent ne doivent pas dépasser la zone visible */
+ fitInner(p,top,bot){this.fits.forEach(([e,c])=>{e.style.maxHeight=c;});this.fits=[];
+  let e=this.field.parentElement;while(e&&e!==p){const cs=getComputedStyle(e);
+   if(/(auto|scroll)/.test(cs.overflowY)){const r=e.getBoundingClientRect();this.fits.push([e,e.style.maxHeight]);e.style.maxHeight=Math.max(120,bot-Math.max(r.top,top)-4)+"px";}e=e.parentElement;}},
+ markStick(f,p){if(this.stick&&this.stick.isConnected&&p.contains(this.stick))return;this.unstick();
+  const re=/valider|vérifier|verifier|entrer|garder|remettre|frapper|composter|alimenter|ouvrir la voie|billet|forger|✔|ok\b|➜|fini/i,isGo=x=>/(Go|Ok|OK|ok|Check)$/.test(x.id||"")||re.test(x.textContent);let e=f,found=null;
+  while(e&&e!==p&&!found){let s=e.nextElementSibling;while(s&&!found){const b=[...s.querySelectorAll?s.querySelectorAll("button"):[]].concat(s.tagName==="BUTTON"?[s]:[]);
+    if(b.some(x=>x.offsetParent&&isGo(x))&&s.getBoundingClientRect().top>=f.getBoundingClientRect().bottom-2){found=s;this.goOnly=s.offsetHeight>=160?b.filter(x=>!isGo(x)&&x.offsetParent):null;}s=s.nextElementSibling;}e=e.parentElement;}
+  if(found){let q=found.parentElement;while(q&&q!==p){if(/(hidden|clip)/.test(getComputedStyle(q).overflowY)){found=null;break;}q=q.parentElement;}}
+  if(found){let bg="",a=found;while(a&&a!==document.documentElement){const c=getComputedStyle(a).backgroundColor;if(c&&c!=="transparent"&&!/rgba\(.*,\s*0\)$/.test(c)){bg=c;break;}a=a.parentElement;}
+   if(this.goOnly){this.goOnly.forEach(x=>x.classList.add("kb-hidebtn"));found.classList.add("kb-goonly");}
+   found.classList.add("kb-stick");this.stick=found;this.stickBg=found.style.background;found.style.background=bg||"#ddd";}},
+ unstick(){if(this.goOnly){this.goOnly.forEach(x=>x.classList.remove("kb-hidebtn"));this.goOnly=null;}(this.squeezed||[]).forEach(e=>e.classList.remove("kb-squeeze"));this.squeezed=[];if(this.stick){this.stick.classList.remove("kb-stick","kb-goonly");this.stick.style.background=this.stickBg||"";this.stick=null;}},
+ reveal(f,p,top,bot){const fr=f.getBoundingClientRect();let a=fr.top-8,b=fr.bottom+8;
+  const nx=f.parentElement&&f.parentElement.querySelector(".vx .vxchips,.vxchips");/* texte tapé (pastilles du micro) */
+  let after=null;if(!f.closest(".vx")){let e=f;for(let k=0;k<3&&e&&e!==p&&!after;k++){const n=e.nextElementSibling;if(n&&n.classList&&n.classList.contains("vx"))after=n;e=e.parentElement;}}
+  if(after){const ar=after.getBoundingClientRect();if(ar.height&&ar.bottom-a<(bot-top)*.8)b=Math.max(b,ar.bottom+4);}
+  const st=this.stick?this.stick.getBoundingClientRect().height:0;
+  let e=f.parentElement;const chain=[];while(e){chain.push(e);if(e===p)break;e=e.parentElement;}
+  for(const sc of chain){const cs=getComputedStyle(sc);if(!(/(auto|scroll)/.test(cs.overflowY)||sc===p)||sc.scrollHeight<=sc.clientHeight+1)continue;
+   const r=sc.getBoundingClientRect(),vt=Math.max(r.top,top),vb=Math.min(r.bottom,bot)-(this.stick&&sc.contains(this.stick)?st+(parseFloat(cs.paddingBottom)||0)+6:0);
+   let d=0;if(b>vb)d=Math.min(b-vb,a-vt);if(a<vt)d=a-vt;if(d){const before=sc.scrollTop;sc.scrollTop+=d;const moved=sc.scrollTop-before;a-=moved;b-=moved;}}},
+ restore(){this.unstick();this.unlift();if(this.taEl){this.taEl.style.height=this.taH||"";this.taEl=null;this.taH=null;}this.fits.forEach(([e,c])=>{e.style.maxHeight=c;});this.fits=[];
+  if(this.panel){const s=this.saved;if(s&&s.css!=null)this.panel.setAttribute("style",s.css);else this.panel.removeAttribute("style");this.panel.classList.remove("kb-panel");}
+  this.panel=null;this.saved=null;},
+ close(){this.restore();this.on=false;const de=document.documentElement;de.classList.remove("kb-on","kb-tight");}
+};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>KB.init());else KB.init();
+</script><!--/CLAVIER-->
+</body></html>
