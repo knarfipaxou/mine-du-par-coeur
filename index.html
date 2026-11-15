@@ -122,6 +122,38 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
 .itemPop{display:flex;align-items:center;gap:14px}
 .itemPop img{width:84px;height:84px;image-rendering:pixelated;background:#8b8b8b;border:3px solid #111;padding:6px;box-shadow:inset 3px 3px 0 #0006}
 @media (max-width:700px){.mc{font-size:14px;padding:5px 9px}#wChip{min-width:110px}#wChip b{font-size:15px}#stat{font-size:13px}.board{font-size:15px}.blk{padding:4px 5px;min-height:34px}input.gap{font-size:15px;height:34px}}
+
+.msg.ok.near{color:#ffc24a}
+.blk.near{background:#7a4a10;border-color:#ffb340;color:#ffe2a8}
+.blk.near .mn{color:#ffc24a}
+
+/* VOIX : micro et Papa écoute */
+.vx{margin:6px 0;font-size:15px}
+.vxhide{display:none!important}
+.vxrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vxb{font:inherit;font-weight:700;border:2px solid #2d2d2d;border-radius:10px;background:#fff;color:#222;padding:8px 14px;min-height:44px;cursor:pointer;touch-action:manipulation}
+.vxb.big{font-size:18px;padding:10px 18px;min-height:52px}
+.vxmic{background:#2f7de1;color:#fff;border-color:#1d4f91;font-size:18px;min-width:150px;min-height:52px}
+.vxmic.rec,.vxrmic.rec{background:#d63b3b;border-color:#8c1f1f;color:#fff;animation:vxpulse 1s infinite}
+@keyframes vxpulse{50%{box-shadow:0 0 0 6px rgba(214,59,59,.3)}}
+.vxpapa{background:#ffe7a8;border-color:#a8781a}
+.vxst{font-weight:700;font-size:14px}.vxst.vxon{color:#1d6fd0}.vxst.vxwarn{color:#b55d00}
+.vxlive{font-style:italic;color:#666;min-height:0;margin:4px 0}
+.vxchips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.vxchip{font:inherit;font-size:16px;border:2px solid #9bb7d9;background:#eef5ff;color:#123;border-radius:8px;padding:5px 8px;min-height:38px;touch-action:manipulation}
+.vxchip.on{border-color:#e08a1e;background:#ffe2b8}
+.vxedit,.vxredo{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0;padding:8px;border-radius:10px;background:#fff6e5;border:2px solid #e08a1e;color:#5a3000}
+.vxedit input,.vxredo input{font:inherit;font-size:17px;padding:8px;border:2px solid #888;border-radius:8px;min-width:160px;flex:1}
+.vxrt{width:100%;font-weight:800}
+.vxov{display:none;position:fixed;inset:0;z-index:9999;background:rgba(20,20,30,.92);align-items:center;justify-content:center;padding:16px}
+.vxov.on{display:flex}
+.vxcard{background:#fffdf5;color:#222;border-radius:16px;max-width:720px;width:100%;max-height:92vh;overflow:auto;padding:20px;font-size:18px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.vxcard h3{margin:0 0 10px}.vxtitle{font-weight:800}
+.vxcard input{font-size:24px;padding:8px;width:140px;border:2px solid #555;border-radius:8px}
+.vxbtns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.vxfiche{background:#fff;border:2px solid #5fae55;border-radius:10px;padding:12px;line-height:1.5;margin:8px 0}
+.vxopt{opacity:.6}
+.vxg1{background:#c9f2c0;border-color:#2c7a22}.vxg2{background:#ffe2b8;border-color:#e08a1e}.vxg3{background:#ffd0d0;border-color:#b23030}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="hud" class="hide">
@@ -312,7 +344,8 @@ function tokenize(str,user){
    if(!core){out.push({d:raw,p:1,o:opt});continue}
    let n=core.toLowerCase();
    if(n==="/")n="÷";else if(n==="*"||n==="x")n="×";else if(n==="-")n="−";
-   else if(n==="deux")n="2";else if(n==="trois")n="3";
+   else if(n==="deux")n="2";else if(n==="trois")n="3";else if(n==="zéro"||n==="zero")n="0";
+   else if(user&&(n==="moins"))n="−";else if(user&&n==="plus")n="+";else if(user&&(n==="quand"||n==="lorsque"))n="si";
    const sym=SYMS.has(n);
    const name=/^[A-Z]{2,3}$/.test(core)||/^[A-Z]−?\d/.test(core)||/^[A-Z]$/.test(core);
    out.push({d:raw,c:core,n,l:stripAcc(n),o:opt,sym,name});
@@ -320,8 +353,43 @@ function tokenize(str,user){
  }
  return out;
 }
-function lev(a,b){if(Math.abs(a.length-b.length)>1)return 9;const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,j)=>j);
+function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,j)=>j);
  for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n];}
+/* ================= DICTÉE ET PHONÉTIQUE =================
+   phon : clé phonétique française simple (type phonex) pour reconnaître un mot-clé mal transcrit.
+   dictNorm : la dictée écrit « moins trois », « cent quatre-vingts degrés », « virgule »... on remet en chiffres et symboles. */
+function phon(w){let s=stripAcc(String(w).toLowerCase()).replace(/[^a-z]/g,"");
+ s=s.replace(/ph/g,"f").replace(/qu/g,"k").replace(/gu(?=[eiy])/g,"g").replace(/c(?=[eiy])/g,"s").replace(/c/g,"k").replace(/g(?=[eiy])/g,"j").replace(/h/g,"").replace(/y/g,"i").replace(/w/g,"v")
+  .replace(/eau|au/g,"o").replace(/ai|ei/g,"e").replace(/([aeiou])s(?=[aeiou])/g,"$1z").replace(/(.)\1+/g,"$1")
+  .replace(/(?:an|en|am|em)(?![aeiou])/g,"A").replace(/(?:ain|ein|in|im|un)(?![aeiou])/g,"I").replace(/(?:on|om)(?![aeiou])/g,"O").replace(/ou/g,"U").replace(/oi/g,"Ua");
+ for(let k=0;k<2;k++)s=s.replace(/(?:er|ez|et|es|ent|e|s|t|d|x|p)$/,"");return s;}
+const NUMW={zero:0,"zéro":0,un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,vingt:20,vingts:20,trente:30,quarante:40,cinquante:50,soixante:60,cent:100,cents:100};
+/* deux mots-nombres se suivent-ils dans un vrai nombre composé ? (« cent quatre-vingts » oui, « zéro zéro » non) */
+function numJoin(a,b){const va=NUMW[a],vb=NUMW[b];if(va==null||vb==null||va===0||vb===0)return false;
+ if(vb===100)return va>=2&&va<=9;if(vb===20)return a==="quatre";if(va===100)return true;if(va>=20&&va%10===0&&va<100)return vb<20;return false;}
+function numRun(ws){let tot=0,cur=0,k=0;for(let i=0;i<ws.length;i++){const w=ws[i];if(w==="et")continue;let v=NUMW[w];if(v==null)return null;
+  if(v===100){cur=(cur||1)*100;}else if(v===20&&ws[i-1]==="quatre"){cur+=76;}else cur+=v;k++;}return k?tot+cur:null;}
+function dictNorm(str){
+ let s=" "+String(str).replace(/[’‘]/g,"'")+" ";
+ s=s.replace(/\s+point[- ]virgule\b/gi," ;").replace(/\s+virgule\b/gi,",").replace(/\s+point (?:final|à la ligne)\b/gi,".").replace(/\bouvre(?:z)? (?:la )?parenthèse\s*/gi,"(").replace(/\s*ferme(?:z)? (?:la )?parenthèse\b/gi,")");
+ const toks=s.split(/(\s+)/);const out=[];
+ for(let i=0;i<toks.length;i++){const t0=toks[i],pm=t0.match(/[,.;]+$/),tail=pm?pm[0]:"",t=t0.slice(0,t0.length-tail.length);const low=t.toLowerCase();
+  const parts=low.split("-");
+  if(t.trim()&&parts.every(p=>NUMW[p]!=null)&&!(parts.length===1&&(low==="un"||low==="une"))){
+   // suite de mots-nombres : « cent quatre-vingts », « vingt et un »
+   const isNum=x=>x&&x.toLowerCase().split("-").every(p=>NUMW[p]!=null);
+   let ws=[...parts],j=i+1,last=i;
+   while(j+1<toks.length){const nx=toks[j+1];
+    if(/[,.;]$/.test(toks[last]))break;
+    const nxc=nx.replace(/[,.;]+$/,""),prev=ws[ws.length-1];
+    if(isNum(nxc)&&!/^une?$/i.test(nxc)&&numJoin(prev,nxc.toLowerCase().split("-")[0])){ws.push(...nxc.toLowerCase().split("-"));last=j+1;j+=2;}
+    else if(/^et$/i.test(nx)&&/^(vingt|trente|quarante|cinquante|soixante)$/.test(prev)&&toks[j+3]&&/^(un|onze)[,.;]*$/i.test(toks[j+3])){ws.push(toks[j+3].toLowerCase().replace(/[,.;]+$/,""));last=j+3;j+=4;}
+    else break;}
+   const v=numRun(ws);if(v!=null){const lt=toks[last].match(/[,.;]+$/);out.push(String(v)+(last===i?tail:(lt?lt[0]:"")));i=last;continue;}}
+  out.push(t0);}
+ s=out.join("");
+ s=s.replace(/\bmoins\s+(\d)/gi,"−$1").replace(/\bplus\s+(\d)/gi,"+$1").replace(/(\d)\s*degrés?\b/gi,"$1°");
+ return s.replace(/\s+([,.;])/g,"$1").replace(/\s+/g," ").trim();}
 /* ================= VÉRIFICATION SOUPLE : le sens d'abord =================
    Mots-clés (termes de géométrie, nombres, symboles, si / alors / et / donc,
    négations, noms d'angles) : exigés, une erreur se voit à sa place.
@@ -330,14 +398,31 @@ function lev(a,b){if(Math.abs(a.length-b.length)>1)return 9;const m=a.length,n=b
    Synonymes du cours acceptés fiche par fiche (liste prudente).
    Le « si » et le « alors » ne s'échangent pas : ce serait la réciproque. */
 var NAME_LOOSE=false;
-const FREE=new Set("le la les l' un une des du de d' a au aux en par pour avec sur sous dans entre vers dont qui que qu' est sont ont ce cet cette ces c' sa ses son leur leurs ils il elles elle on se s' y ayant situes situe situee situees".split(" "));
+const FREE=new Set("le la les l' un une des du de d' a au aux en par pour avec sur sous dans entre vers dont qui que qu' est sont ont ce cet cette ces c' sa ses son leur leurs ils il elles elle on se s' y ayant situes situe situee situees et ou lequel laquelle lesquels lesquelles ai ca".split(" "));
 /* petits mots propres à une fiche (n'en changent pas le sens) */
-const FREEX={18:["possede"],10:["formes"],11:["formes"],15:["formes"],16:["formes"],17:["tout"],20:["3"],14:["souvent"]};
+const FREEX={18:["possede"],10:["formes","angles","droites"],11:["formes","angles","droites"],15:["formes","angles","droites"],16:["formes","angles","droites"],17:["tout"],20:["3"],14:["souvent"],3:["angle"],7:["droite"],12:["angles"],13:["angles"],
+ 21:["nombre","nombres","rapport"],22:["nombre","nombres","point","droite","lequel"],24:["nombre","nombres","exemple","suite","cours","symbole","ecriture"]};
 function stem1(s){if(/\d/.test(s))return s.replace(/°/g,"");return s.replace(/aux$/,"al").replace(/(ent|s|x)$/,"").replace(/e+$/,"");}
 function stemW(l){return String(l).split("-").map(stem1).join("-");}
-const DANGER=new Set("ne n' pas non jamais aucun aucune si alors parallele paralleles secante secantes perpendiculaire perpendiculaires adjacents supplementaires complementaires opposes correspondants alternes-internes alternes-externes internes externes bissectrice rectangle isocele equilateral reciproque".split(" ").map(stemW));
+const DANGER=new Set("ne n' pas non jamais aucun aucune si alors parallele paralleles secante secantes perpendiculaire perpendiculaires adjacents supplementaires complementaires opposes correspondants alternes-internes alternes-externes internes externes bissectrice rectangle isocele equilateral reciproque positif positifs negatif negatifs interieur exterieur".split(" ").map(stemW));
+/* Mots critiques : sans eux le sens change (nombres, symboles, noms, mots sensibles, et ceux-ci par fiche).
+   Les autres mots-clés peuvent manquer un peu : à 85 % du sens, la réponse est acceptée (« presque parfait »). */
+const NEAR_TH=0.85;
+const CRIT_RAW={1:"sommet commun part autre meme",3:"demi-droite meme mesure",5:"meme sommet prolongement demi-droites",6:"sommet",7:"points distincts",8:"interieur intersection part autre sommet",9:"interieur exterieur meme cote intersection sommet",12:"somme",13:"somme",14:"hypothese conclusion reciproque",17:"triangle somme",18:"triangle somme",19:"triangle base",20:"triangle",21:"relatif signe valeur absolue distance",22:"graduee origine unite sens abscisse axe grandissent",24:"signe soustraction addition parentheses"};
+const NOCRIT_RAW={22:"si"};
+/* mot critique qu'on peut ne pas répéter (déjà dit plus haut dans la fiche) */
+const REPEAT_OK={22:"graduee"};
+const NEGW=new Set(["ne","n'","pas","non","jamais","aucun","aucune"]);
+const ANTI=[["positif","negatif"],["parallele","perpendiculaire","secante"],["complementaire","supplementaire"],["grand","petit"],["interieur","exterieur"],["interne","externe"],["alternes-interne","alternes-externe","correspondant"],["adjacent","oppose"],["grandissent","diminuent","retrecissent"],["addition","soustraction"],["si","alors"],["hypothese","conclusion"],["droit","plat","aigu","obtus"]];
+const ANTIM=new Map();ANTI.forEach((g,i)=>g.forEach(w=>ANTIM.set(w,i)));
 function isFree(t,f){if(!t||t.p||t.name||t.sym||t.syn)return false;if(FREEX[f]&&FREEX[f].includes(t.l))return true;if(/\d/.test(t.l))return false;return FREE.has(t.l);}
 function isDanger(t){return !!t&&(t.syn?false:(/\d/.test(t.l)||t.sym||DANGER.has(stemW(t.l))));}
+const _critC={};function critSet(f){if(!_critC[f]){const mk=x=>new Set(String(x||"").split(" ").filter(Boolean).map(stemW));_critC[f]={c:mk(CRIT_RAW[f]),n:mk(NOCRIT_RAW[f])};}return _critC[f];}
+function isCrit(t,f){if(!t||t.p)return false;if(t.syn)return true;if(isFree(t,f))return false;const s=stemW(t.l),C=critSet(f);if(C.n.has(s))return false;return !!(t.name||isDanger(t)||C.c.has(s));}
+function antiKey(t){if(!t||t.syn)return null;const s=stemW(t.l);for(const k of [s,s.replace(/s$/,""),t.l])if(ANTIM.has(k))return ANTIM.get(k);return null;}
+function isContra(r,u){const a=antiKey(r),b=antiKey(u);return a!=null&&a===b&&stemW(r.l)!==stemW(u.l);}
+function nearText(res){return (res&&res.near||[]).map(t=>`« ${t.c} »`).join(", ");}
+function msgCls(res){return "msg "+(res&&res.ok?(res.near&&res.near.length?"ok near":"ok"):"ko");}
 const ELI=new Set(["d","l","s","qu","n","c"]);
 function siFix(T){T=T.map(t=>(!t.p&&!t.name&&ELI.has(t.l))?Object.assign({},t,{n:t.n+"'",l:t.l+"'"}):t);return T.map((t,i)=>{if(t.l==="s'"){const nx=T[i+1];if(nx&&/^ils?$/.test(nx.l))return Object.assign({},t,{n:"si",l:"si"});}return t;});}
 /* ---- synonymes ---- */
@@ -345,7 +430,7 @@ const SYN_G={EGAL:["ont la même mesure","ont une même mesure","ont même mesur
 const SYN_VAUT=["vaut","valent","est égale à","est égal à","sont égales à","égale à","égal à","égale","égal","fait","font","mesure","mesurent","est de","sont de","est","égalent","="];
 const SYN_F={
  3:{PART:["partage","coupe","divise","sépare"]},
- 7:{COUPE:["coupe","croise"]},
+ 7:{COUPE:["coupe","croise"],DIST:["distincts","différents"]},
  12:{SOMME:["la somme de leurs mesures","la somme des mesures","leur somme"]},
  13:{SOMME:["la somme de leurs mesures","la somme des mesures","leur somme"]},
  14:{ECH:["en échangeant","en inversant","en permutant"]},
@@ -388,7 +473,9 @@ function eqTok(r,u){
  if(rl===ul&&/\d/.test(rl))return 1;
  if(/\d/.test(rl)||/\d/.test(ul))return 0;
  if(rl.length>=3&&ul.length>=3&&stemW(rl)===stemW(ul))return 1;
- if(r.l.length>=5&&u.l.length>=4&&lev(r.l,u.l)<=1)return 1;
+ if(r.l.length>=5&&u.l.length>=4&&lev(r.l,u.l)<=1&&!isContra(r,u))return 1;
+ if(r.l.length>=8&&u.l.length>=7&&!DANGER.has(stemW(r.l))&&!DANGER.has(stemW(u.l))&&lev(r.l,u.l)<=2)return 1;
+ if(rl.length>=4&&ul.length>=3&&!isContra(r,u)){const pr=phon(rl);if(pr.length>=3&&pr===phon(ul))return 1;}
  return 0;
 }
 function minorWhy(r,u){if(r.l===u.l)return "accent";if(r.l.replace(/°/g,"")===u.l.replace(/°/g,""))return "le °";if(stemW(r.l)===stemW(u.l))return "accord";return "orthographe";}
@@ -437,16 +524,55 @@ function diff(refT,usrT,f){
   const u1=keyset(U,sU,1),u2=keyset(U,sU,2);
   const hit=(A,B)=>[...A].filter(x=>B.has(x)).length;
   if(c1.size&&c2.size&&hit(c1,u2)>=Math.max(1,Math.ceil(c1.size/2))&&hit(c2,u1)>=Math.max(1,Math.ceil(c2.size/2)))swapped=true;}
- let err=0,minor=0,match=0;const soft=[];
- for(const o of ops){if(o.k==="wr"||o.k==="mi"||o.k==="ex")err++;if(o.k==="mn")minor++;
+ let err=0,minor=0,match=0,hard=0,contra=false;const soft=[],nearOps=[];
+ const refSt=new Set(R.map(t=>t.syn?t.n:stemW(t.l)));
+ const usrSt=new Set(U.map(t=>t.syn?t.n:stemW(t.l)));
+ // mot critique répété (ex. « droite graduée » la 2e fois) : déjà dit plus haut, son oubli ne change pas le sens
+ const isRepeat=r=>{if(r.syn||r.name||isDanger(r))return false;const st=stemW(r.l);if(!String(REPEAT_OK[f]||"").split(" ").map(stemW).includes(st))return false;return R.indexOf(r)>R.findIndex(t=>!t.syn&&stemW(t.l)===st)&&usrSt.has(st);};
+ for(const o of ops){
+  if(o.k==="ex"){if(NEGW.has(o.u.l)||!refSt.has(stemW(o.u.l))){err++;hard++;}else o.k="fx";}
+  else if(o.k==="mi"){err++;if(isCrit(o.r,f)&&!isRepeat(o.r))hard++;else nearOps.push(o);}
+  else if(o.k==="wr"){err++;if(isContra(o.r,o.u)){contra=true;hard++;}else if(isCrit(o.r,f)||isCrit(o.u,f))hard++;else nearOps.push(o);}
+  if(o.k==="mn")minor++;
   if(o.k==="ok"||o.k==="mn"||o.k==="sy"||o.k==="mv"||o.k==="fw")match+=isFree(o.r,f)?.5:1;
   if(o.k==="fm"||o.k==="fx"||o.k==="fw"||o.k==="sy"||o.k==="mv")soft.push(o);}
- if(swapped)err=Math.max(err,1);
+ if(swapped){err=Math.max(err,1);hard++;}
  const req=R.filter(t=>!t.o).reduce((s,t)=>s+(isFree(t,f)?.5:1),0)+ops.filter(o=>o.r&&o.r.o&&(o.k==="ok"||o.k==="mn"||o.k==="sy")).length;
  const ulen=U.reduce((s,t)=>s+(isFree(t,f)?.5:1),0);
  const score=2*match/((req+ulen)||1);
- return {ops,err,minor,soft,swapped,score,ok:err===0&&n>0,n};
+ const keyTot=R.filter(t=>!t.o&&!isFree(t,f)).length||1;
+ const cover=1-nearOps.length/keyTot;
+ const ok=n>0&&hard===0&&cover>=NEAR_TH-1e-9;
+ if(ok){nearOps.forEach(o=>o.near=true);err=0;}
+ // libellé du mot presque oublié, avec ses petits mots juste avant (« à la fois », « droite graduée »)
+ const lab=r=>{let k=R.indexOf(r),w=[r.c],j=k-1;while(j>=0&&k-j<=2&&!R[j].syn&&!R[j].o&&isFree(R[j],f)&&!/'$/.test(R[j].c)){w.unshift(R[j].c);j--;}return {c:w.join(" ")};};
+ const PI=partsOf(refT);let cp=0;for(const o of ops){if(o.r){const q=PI.map.get(o.r.syn?o.r.parts[0]:o.r);if(q!=null)cp=q;}o.pi=cp;}
+ const bad=new Set(ops.filter(o=>(o.k==="mi"||o.k==="wr"||o.k==="ex")&&!o.near).map(o=>o.pi));
+ const redo=ok?null:(bad.size?Math.min(...bad):(swapped?0:null));
+ return {ops,err,hard,contra,minor,soft,swapped,score,ok,n,cover,near:ok?nearOps.map(o=>lab(o.r)):[],parts:PI.labs,redo,f};
 }
+/* découpe d'une fiche en parties (puces, points, « ; », « : », « alors ») */
+const _partC=new WeakMap();
+function partsOf(T){let P=_partC.get(T);if(P)return P;P={map:new Map(),labs:[]};let k=0,seen=0,words=[];
+ const close=()=>{if(seen){P.labs.push(words.slice(0,3).join(" ").replace(/' /g,"'"));k++;seen=0;words=[];}};
+ for(const t of T){if(t.p){if(/[•;.]/.test(t.d))close();continue;}if(t.l==="alors"&&seen)close();P.map.set(t,k);if(t.o)continue;seen++;words.push(t.c);if(/[.;]\W*$/.test(t.d)&&!/\d\.\d/.test(t.d))close();}
+ close();if(!P.labs.length)P.labs.push("");_partC.set(T,P);return P;}
+function redoText(res){if(!res||res.redo==null||!res.parts)return "";const n=res.parts.length;
+ return n>1?`Redis juste la partie ${res.redo+1} sur ${n}, celle qui commence par « ${res.parts[res.redo]} ».`:"Redis la fiche en entier.";}
+/* remplace dans la réponse la partie à redire par le nouveau morceau dicté */
+function mergeRedo(res,pi,txt,keepTail){const by=[],tail=[];let lastMi=-1;res.ops.forEach((o,k)=>{if(o.pi===pi&&(o.k==="mi"||o.k==="fm"))lastMi=k;});
+ res.ops.forEach((o,k)=>{const u=o.u;if(!u)return;if(keepTail&&o.pi===pi&&k>lastMi){tail.push(u.c);return;}(by[o.pi]=by[o.pi]||[]).push(u.c);});
+ if(tail.length)txt=String(txt).trim()+" "+tail.join(" ");
+ const n=Math.max(res.parts?res.parts.length:1,by.length),out=[];for(let i=0;i<n;i++){if(i===pi){out.push(String(txt).trim());continue;}if(by[i])out.push(by[i].join(" ").replace(/' /g,"'"));}
+ return out.filter(Boolean).join(" ");}
+/* fusion « en place » : on essaie de remplacer la partie, ou d'insérer le morceau à sa place, et on garde la meilleure */
+function mergeBest(res,pi,txt){const f=res.f,all=[];let ins=-1;res.ops.forEach(o=>{if(!o.u)return;if(ins<0&&o.pi>=pi)ins=all.length;all.push(o.u.c);});if(ins<0)ins=all.length;
+ const c1=mergeRedo(res,pi,txt),c3=mergeRedo(res,pi,txt,true),c2=all.slice(0,ins).concat([String(txt).trim()],all.slice(ins)).join(" ").replace(/' /g,"'");
+ const sc=t=>{const r=diff(REF[f],tokenize(dictNorm(t),true),f);return (r.ok?1000:0)-r.err*10+r.score;};
+ return [c1,c3,c2].map(t=>[t,sc(t)]).sort((x,y)=>y[1]-x[1])[0][0];}
+function papaMsg(res){if(!res||!res.papa)return "";return res.papa==="coeur"?"Papa a dit : par cœur ! Bravo.":res.papa==="presque"?"Papa a dit : presque. Ça compte quand même.":"Papa a dit : à revoir.";}
+function papaRes(f,grade){const T=REF[f].filter(t=>!t.p&&!t.o);const ok=grade!=="revoir";
+ return {ops:T.map(t=>ok?{k:"ok",r:t,u:t}:{k:"mi",r:t}),err:ok?0:1,hard:ok?0:1,minor:0,soft:[],swapped:false,score:1,ok,n:T.length,cover:1,near:[],parts:[],redo:null,f,papa:grade};}
 function softLabel(o){
  if(o.k==="fm")return `« ${o.r.c} » oublié`;
  if(o.k==="fx")return `« ${o.u.c} » en plus`;
@@ -850,6 +976,100 @@ function loop(now){requestAnimationFrame(loop);let dt=Math.max(0,Math.min(.05,(n
  renderer.render(scene,camera);
 }
 
+/* ================= VOIX : réciter au micro, et « Papa écoute » (partagé entre les jeux) =================
+   Micro : chaque morceau reconnu est AJOUTÉ à la réponse (jamais tout remplacé). Chaque mot est une
+   pastille : on la touche pour le corriger ou l'effacer. Après la vérification, on dit seulement
+   quelle partie redire, et on la redit seule : elle est remise à sa place.
+   Papa écoute : le texte est caché, l'enfant récite, papa répond à une multiplication puis note. */
+const VOIX={bars:{},pending:null,denied:false,cur:null,
+ SR(){return window.SpeechRecognition||window.webkitSpeechRecognition||null;},
+ esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));},
+ attach(id,o){
+  const B={id,o,field:o.field,res:null,redoPi:null,buf:"",last:null,editI:-1};this.bars[id]=B;
+  const el=document.createElement("div");el.className="vx";el.id="vx-"+id;
+  el.innerHTML=`<div class="vxrow"><button type="button" class="vxb vxmic">🎤 Dicter</button><button type="button" class="vxb vxpapa">👂 Papa écoute</button><span class="vxst"></span></div>
+   <div class="vxlive"></div><div class="vxchips"></div>
+   <div class="vxedit vxhide"><input class="vxein" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button type="button" class="vxb vxeok">✔ Garder</button><button type="button" class="vxb vxedel">🗑 Effacer</button></div>
+   <div class="vxredo vxhide"><div class="vxrt"></div><button type="button" class="vxb vxrmic">🎤 Redire cette partie</button><button type="button" class="vxb vxrkb">⌨️ Taper cette partie</button>
+    <span class="vxrkbox vxhide"><input class="vxrin" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tape seulement cette partie"><button type="button" class="vxb vxrok">✔ Remettre à sa place</button></span></div>`;
+  (o.anchor||o.field).insertAdjacentElement("afterend",el);B.el=el;const q=s=>el.querySelector(s);B.q=q;
+  const nb=e=>e.addEventListener("pointerdown",ev=>ev.preventDefault());
+  el.querySelectorAll("button").forEach(nb);
+  q(".vxmic").onclick=()=>this.toggle(B,"main");
+  q(".vxpapa").onclick=()=>this.papaOpen(B);
+  q(".vxrmic").onclick=()=>this.toggle(B,"redo");
+  q(".vxrkb").onclick=()=>{q(".vxrkbox").classList.remove("vxhide");q(".vxrin").value="";q(".vxrin").focus();};
+  q(".vxrok").onclick=()=>{const t=q(".vxrin").value.trim();if(t)this.redoDone(B,t);};
+  q(".vxrin").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();q(".vxrok").click();}});
+  q(".vxeok").onclick=()=>this.editSave(B,false);q(".vxedel").onclick=()=>this.editSave(B,true);
+  q(".vxein").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();this.editSave(B,false);}});
+  B.field.addEventListener("input",()=>this.chips(B));
+  if(!this.SR()||this.denied)q(".vxmic").classList.add("vxhide"),q(".vxrmic").classList.add("vxhide");
+  setInterval(()=>this.tick(B),400);this.tick(B);return B;},
+ tick(B){const vis=!!(B.field.offsetParent||B.field.getClientRects().length);B.q(".vxrow").classList.toggle("vxhide",!vis);
+  B.q(".vxpapa").classList.toggle("vxhide",!(B.o.papaOK?B.o.papaOK():true));
+  if(!vis){B.q(".vxchips").classList.add("vxhide");B.q(".vxedit").classList.add("vxhide");if(this.cur===B&&B.mode==="main")this.stop(B);}
+  else B.q(".vxchips").classList.remove("vxhide");
+  if(B.field.value!==B.last)this.chips(B);},
+ words(B){return B.field.value.split(/\s+/).filter(Boolean);},
+ chips(B){B.last=B.field.value;const W=this.words(B);const c=B.q(".vxchips");
+  c.innerHTML=W.length&&(this.cur===B||B.used)?W.map((w,i)=>`<button type="button" class="vxchip${i===B.editI?" on":""}" data-i="${i}">${this.esc(w)}</button>`).join(""):"";
+  c.querySelectorAll(".vxchip").forEach(b=>{b.addEventListener("pointerdown",e=>e.preventDefault());b.onclick=()=>{B.editI=+b.dataset.i;const ed=B.q(".vxedit");ed.classList.remove("vxhide");const inp=B.q(".vxein");inp.value=this.words(B)[B.editI]||"";this.chips(B);inp.focus();try{inp.select()}catch(_){}};});},
+ editSave(B,del){const W=this.words(B),i=B.editI;if(i<0||i>=W.length)return;const v=B.q(".vxein").value.trim();
+  if(del||!v)W.splice(i,1);else W.splice(i,1,...v.split(/\s+/));B.field.value=W.join(" ");B.editI=-1;B.q(".vxedit").classList.add("vxhide");this.chips(B);this.say(B,del?"Mot effacé.":"Mot corrigé.");},
+ say(B,t,cls){const s=B.q(".vxst");s.textContent=t||"";s.className="vxst"+(cls?" "+cls:"");},
+ audio(){try{if(typeof IOSAU!=="undefined"){IOSAU.session();IOSAU.resume();}}catch(e){}},
+ unavailable(B,denied){if(denied)this.denied=true;Object.values(this.bars).forEach(x=>{x.q(".vxmic").classList.add("vxhide");x.q(".vxrmic").classList.add("vxhide");});
+  this.say(B,denied?"Le micro est refusé. Tu peux taper ta réponse, ou autoriser le micro dans les réglages.":"Le micro n'est pas disponible ici. Tu peux taper ta réponse.","vxwarn");},
+ toggle(B,mode){if(this.cur===B){this.stop(B);return;}this.start(B,mode);},
+ start(B,mode){const SR=this.SR();if(!SR||this.denied){this.unavailable(B,this.denied);return;}
+  if(this.cur)this.stop(this.cur);B.mode=mode;B.used=true;B.buf="";this.cur=B;B.on=true;
+  let r;try{r=new SR();}catch(e){this.unavailable(B,false);return;}B.rec=r;
+  r.lang="fr-FR";r.interimResults=true;r.continuous=true;r.maxAlternatives=1;
+  r.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(x.isFinal)this.chunk(B,x[0].transcript);else interim+=x[0].transcript;}
+   B.q(".vxlive").textContent=interim?"… "+interim:"";};
+  r.onerror=e=>{const er=e&&e.error;if(er==="not-allowed"||er==="service-not-allowed"||er==="audio-capture"){B.on=false;this.unavailable(B,er!=="audio-capture");}};
+  r.onend=()=>{this.audio();if(B.on&&this.cur===B){setTimeout(()=>{if(B.on&&this.cur===B){try{r.start();}catch(_){}}},250);return;}this.ended(B);};
+  try{r.start();}catch(e){this.unavailable(B,false);return;}
+  const btn=B.q(mode==="redo"?".vxrmic":".vxmic");btn.classList.add("rec");btn.textContent="⏹ J'ai fini";
+  this.say(B,mode==="redo"?"Je t'écoute. Redis seulement cette partie.":"Je t'écoute. Récite phrase par phrase, je recopie à la suite.","vxon");this.chips(B);},
+ stop(B){B.on=false;try{B.rec&&B.rec.stop();}catch(e){}if(!B.rec)this.ended(B);setTimeout(()=>{if(this.cur===B)this.ended(B);},900);},
+ ended(B){if(this.cur!==B)return;this.cur=null;this.audio();B.q(".vxlive").textContent="";
+  B.q(".vxmic").classList.remove("rec");B.q(".vxmic").textContent="🎤 Dicter";B.q(".vxrmic").classList.remove("rec");B.q(".vxrmic").textContent="🎤 Redire cette partie";
+  if(B.mode==="redo"){const t=B.buf.trim();B.buf="";if(t)this.redoDone(B,t);else this.say(B,"Je n'ai rien entendu. Réessaie.");}
+  else if(!this.denied)this.say(B,B.field.value.trim()?"Vérifie les mots. Touche un mot pour le corriger.":"");this.chips(B);},
+ chunk(B,txt){const t=(typeof dictNorm==="function"?dictNorm(txt):txt).trim();if(!t)return;
+  if(B.mode==="redo"){B.buf=(B.buf+" "+t).trim();B.q(".vxlive").textContent="";this.say(B,"Partie redite : « "+B.buf+" »","vxon");return;}
+  B.field.value=(B.field.value.replace(/\s+$/,"")+" "+t).trim();B.field.dispatchEvent(new Event("input",{bubbles:true}));this.chips(B);},
+ /* après la vérification du jeu */
+ after(id,res){const B=this.bars[id];if(!B)return;B.res=res;const box=B.q(".vxredo");B.q(".vxrkbox").classList.add("vxhide");
+  if(!res||res.ok||res.papa||res.redo==null||typeof redoText!=="function"){box.classList.add("vxhide");return;}
+  const can=B.o.canRedo?B.o.canRedo(res):false;B.redoPi=res.redo;B.redoText=B.field.value;
+  B.q(".vxrt").textContent=can?redoText(res):"À revoir surtout : "+redoText(res).replace(/^Redis juste /,"").replace(/^Redis /,"");
+  box.classList.remove("vxhide");B.q(".vxrmic").classList.toggle("vxhide",!can||!this.SR()||this.denied);B.q(".vxrkb").classList.toggle("vxhide",!can);},
+ redoDone(B,t){const res=B.res;if(!res)return;const merged=(typeof mergeBest==="function")?mergeBest(res,B.redoPi,dictNorm(t)):(B.redoText+" "+t);
+  B.q(".vxredo").classList.add("vxhide");this.say(B,"Partie remise à sa place.","vxon");B.o.retry&&B.o.retry(merged);},
+ take(){const p=this.pending;this.pending=null;return p;},
+ /* ---------- Papa écoute ---------- */
+ papaOpen(B){if(this.cur)this.stop(this.cur);const f=B.o.fiche();if(!f)return;B.o.pause&&B.o.pause();
+  let ov=document.getElementById("vxPapa");if(!ov){ov=document.createElement("div");ov.id="vxPapa";document.body.appendChild(ov);}
+  this.pp={B,f};ov.className="vxov on";this.papaStep(1);},
+ papaStep(n){const ov=document.getElementById("vxPapa"),{B,f}=this.pp,F=FICHES[f];
+  if(n===1)ov.innerHTML=`<div class="vxcard"><h3>👂 Papa écoute</h3><p>Récite la fiche à voix haute, sans regarder. Papa écoute.</p><p class="vxtitle">Fiche ${f} : « ${this.esc(F.title)} »</p>
+   <div class="vxbtns"><button type="button" class="vxb big" id="vxP1">✋ J'ai fini, je passe l'iPad à papa</button><button type="button" class="vxb" id="vxPx">Annuler</button></div></div>`;
+  if(n===2){const a=6+Math.floor(Math.random()*4),b=6+Math.floor(Math.random()*4);this.pp.ans=a*b;
+   ov.innerHTML=`<div class="vxcard"><h3>🔒 Pour papa</h3><p>Combien font ${a} × ${b} ?</p><input id="vxPin" inputmode="numeric" pattern="[0-9]*" autocomplete="off"><div class="vxbtns"><button type="button" class="vxb big" id="vxP2">Valider</button><button type="button" class="vxb" id="vxPx">Annuler</button></div><p class="vxst" id="vxPm"></p></div>`;}
+  if(n===3)ov.innerHTML=`<div class="vxcard"><h3>📜 Fiche ${f} : ${this.esc(F.title)}</h3><div class="vxfiche">${this.esc(F.txt).replace(/\{([^}]*)\}/g,'<span class="vxopt">$1</span>').replace(/ • /g,"<br>• ")}</div>
+   <p>Comment a-t-il récité ?</p><div class="vxbtns"><button type="button" class="vxb big vxg1" data-g="coeur">✅ Par cœur</button><button type="button" class="vxb big vxg2" data-g="presque">🟠 Presque</button><button type="button" class="vxb big vxg3" data-g="revoir">🔁 À revoir</button></div></div>`;
+  const x=document.getElementById("vxPx");if(x)x.onclick=()=>this.papaClose(null);
+  const p1=document.getElementById("vxP1");if(p1)p1.onclick=()=>this.papaStep(2);
+  const p2=document.getElementById("vxP2");if(p2){const go=()=>{const v=+document.getElementById("vxPin").value;if(v===this.pp.ans)this.papaStep(3);else{document.getElementById("vxPm").textContent="Ce n'est pas ça. Nouvelle question.";setTimeout(()=>this.papaStep(2),900);}};
+   p2.onclick=go;document.getElementById("vxPin").addEventListener("keydown",e=>{if(e.key==="Enter")go();});setTimeout(()=>{try{document.getElementById("vxPin").focus()}catch(_){}} ,60);}
+  ov.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>this.papaClose(b.dataset.g));},
+ papaClose(g){const ov=document.getElementById("vxPapa");ov.className="vxov";ov.innerHTML="";const {B,f}=this.pp;this.pp=null;B.o.resume&&B.o.resume();this.audio();
+  if(!g)return;this.pending=papaRes(f,g);B.q(".vxredo").classList.add("vxhide");B.o.papa(g,f);}
+};
+
 /* ================= INTERFACE ================= */
 let started=false,railMode=false,railSel=null;
 const PANELS=["forge","link","duel","inv","gate","parent","pop"];
@@ -972,13 +1192,17 @@ function renderForge(){const f=FG.f,F=FICHES[f],s=FS(f);FG.res=false;
   g.addEventListener("keydown",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();if(e.key==="Enter"&&!gaps[k+1])$("fGo").click();else nx();}});
   g.addEventListener("input",()=>{if(/\s$/.test(g.value)){g.value=g.value.trim();nx();}});});
  const fe=typing?$("fText"):gaps[0];if(fe){try{fe.focus({preventScroll:true})}catch(_){}}}
-function softNote(res){return res.soft&&res.soft.length?` C'est juste ! Petits mots différents : ${softText(res)}. (En gris : petit mot à revoir, ça ne bloque pas.)`:"";}
-function okMsg(res,base){return res.soft&&res.soft.length?`C'est juste ! Petits mots différents : ${softText(res)}. (En gris : petit mot à revoir, ça ne bloque pas.)`:base;}
-function koMsg(res,base){return (res.swapped?SWAP_MSG+" ":"")+base;}
+function softNote(res){const nn=nearNote(res);const sf=res.soft&&res.soft.length?`Petits mots différents : ${softText(res)}. (En gris : petit mot à revoir, ça ne bloque pas.)`:"";return nn?" "+nn:sf?" C'est juste ! "+sf:"";}
+function nearNote(res){const pm=papaMsg(res);if(pm)return pm;const t=nearText(res);return t?`Presque parfait ! Il manquait juste ${t}. Ça compte quand même.`:"";}
+function okMsg(res,base){const nn=nearNote(res);const sf=res.soft&&res.soft.length?`Petits mots différents : ${softText(res)}. (En gris : petit mot à revoir, ça ne bloque pas.)`:"";
+ if(nn)return nn;return sf?"C'est juste ! "+sf:base;}
+function koMsg(res,base){if(res.papa)return papaMsg(res)+" "+base.slice(base.indexOf(". ")+2);return (res.swapped?SWAP_MSG+" ":"")+base;}
 function resultHTML(ops){let k=0;return ops.map(o=>{const d=`style="animation-delay:${Math.min(k++,40)*45}ms"`;
  if(o.k==="ok")return wordBlock(o.r,"gold drop",d);
  if(o.k==="mn")return `<span class="blk minor drop" ${d}>${esc(o.u.c)}<span class="mn">${esc(o.r.c)} · ${minorWhy(o.r,o.u)}</span></span>`;
  if(o.k==="wr")return `<span class="blk crack drop" ${d}><s>${esc(o.u.c)}</s><span class="rw">${esc(o.r.c)}</span></span>`;
+ if(o.near&&o.k==="mi")return `<span class="blk near drop" ${d}>${esc(o.r.c)}<span class="mn">oublié</span></span>`;
+ if(o.near&&o.k==="wr")return `<span class="blk near drop" ${d}>${esc(o.u.c)}<span class="mn">${esc(o.r.c)}</span></span>`;
  if(o.k==="mi")return `<span class="blk miss drop" ${d}>${esc(o.r.c)}</span>`;
  if(o.k==="ex")return `<span class="blk extra drop" ${d}><s>${esc(o.u.c)}</s></span>`;
  if(o.k==="sy")return `<span class="blk gold drop syn" ${d}>${esc(o.u.c)}<span class="mn">= ${esc(o.r.c)}</span></span>`;
@@ -988,22 +1212,22 @@ function resultHTML(ops){let k=0;return ops.map(o=>{const d=`style="animation-de
  if(o.k==="fw")return `<span class="blk soft" ${d} title="petit mot à revoir">${esc(o.u.c)}<span class="mn">${esc(o.r.c)}</span></span>`;
  if(o.k==="op")return `<span class="blk stone opt">${esc(o.r.c)}</span>`;
  if(o.k==="st")return wordBlock(o.r,"stone");if(o.k==="pu")return wordBlock(o.r,"");return "";}).join(" ");}
-function playResultSounds(ops){let i=0;for(const o of ops){if(i>16)break;if(o.k==="ok"||o.k==="mn"||o.k==="sy"||o.k==="mv"){SND.place(i);i++;}else if(o.k==="wr"||o.k==="mi"||o.k==="ex"){SND.crack(i);i++;}}}
+function playResultSounds(ops){let i=0;for(const o of ops){if(i>16)break;if(o.k==="ok"||o.k==="mn"||o.k==="sy"||o.k==="mv"){SND.place(i);i++;}else if(!o.near&&(o.k==="wr"||o.k==="mi"||o.k==="ex")){SND.crack(i);i++;}}}
 function checkForge(){if(FG.res)return;const f=FG.f,s=FS(f);let res;
  if(FG.pass===2||FG.pass===3){const T=REF[f],ops=[];let err=0,minor=0;const inputs={};$("fBoard").querySelectorAll("input.gap").forEach(g=>inputs[g.dataset.i]=g.value);
   T.forEach((t,i)=>{if(!FG.gaps.has(i)){ops.push({k:t.p?"pu":"st",r:t});return;}const u=tokenize(inputs[i]||"",true).filter(x=>!x.p);
    if(!u.length){ops.push({k:"mi",r:t});err++;return;}const e=u.length===1?eqTok(t,u[0]):0;
    if(e===2)ops.push({k:"ok",r:t});else if(e===1){ops.push({k:"mn",r:t,u:u[0]});minor++;}else{ops.push({k:"wr",r:t,u:{c:u.map(x=>x.c).join(" ")}});err++;}});
   res={ops,err,minor,soft:[],ok:err===0};}
- else{const txt=$("fText").value;if(!txt.trim()){$("fMsg").className="msg ko";$("fMsg").textContent="Tape la fiche avant de frapper l'enclume.";SND.nudge();return;}res=diff(REF[f],tokenize(txt,true));}
- FG.res=true;SND.anvil();$("fBoard").innerHTML=resultHTML(res.ops);$("fTyping").classList.add("hide");playResultSounds(res.ops);$("fGo").classList.add("hide");
+ else{const pr=VOIX.take();if(pr)res=pr;else{const txt=$("fText").value;if(!txt.trim()){$("fMsg").className="msg ko";$("fMsg").textContent="Tape la fiche avant de frapper l'enclume.";SND.nudge();return;}res=diff(REF[f],tokenize(txt,true));}}
+ FG.res=true;VOIX.after("forge",res);SND.anvil();$("fBoard").innerHTML=resultHTML(res.ops);$("fTyping").classList.add("hide");playResultSounds(res.ops);$("fGo").classList.add("hide");
  s.minor+=res.minor;const mnote=res.minor?` Attention à ${res.minor} petite${res.minor>1?"s":""} faute${res.minor>1?"s":""} (bloc de fer orange).`:"";
  if(FG.practice){setTimeout(()=>res.ok?SND.good():SND.bad(),500);schedule(f,res.ok);logEv(f,"entrainement",res.ok);if(!res.ok)s.errR+=1;save();
-  $("fMsg").className="msg "+(res.ok?"ok":"ko");$("fMsg").textContent=res.ok?okMsg(res,"Parfait ! La fiche est toujours solide."+mnote):koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Cette fiche reviendra demain.`);
+  $("fMsg").className=msgCls(res);$("fMsg").textContent=res.ok?okMsg(res,"Parfait ! La fiche est toujours solide."+mnote):koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Cette fiche reviendra demain.`);
   $("fAgain").classList.remove("hide");$("fAgain").textContent="🔁 Réessayer";updateHUD();return;}
  if(res.ok){s.pass=FG.pass+1;s.seed=0;save();refreshStation(f);
   if(s.pass>4)return forgeDone(f,mnote);
-  setTimeout(()=>SND.good(),500);$("fMsg").className="msg ok";$("fMsg").textContent=okMsg(res,"Parfait ! Tous les blocs sont en place."+mnote);$("fNext").classList.remove("hide");$("fNext").textContent=`Passe ${s.pass} ➜`;}
+  setTimeout(()=>SND.good(),500);$("fMsg").className=msgCls(res);$("fMsg").textContent=okMsg(res,"Parfait ! Tous les blocs sont en place."+mnote);$("fNext").classList.remove("hide");$("fNext").textContent=`Passe ${s.pass} ➜`;}
  else{s.errF+=1;s.seed=(s.seed||0);logEv(f,"forge-passe"+FG.pass,false);save();setTimeout(()=>SND.bad(),500);
   $("fMsg").className="msg ko";$("fMsg").textContent=koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Les mots verts sont les bons. Regarde-les, puis recommence la passe.`);$("fAgain").classList.remove("hide");$("fAgain").textContent="🔁 Recommencer la passe";}}
 $("fGo").onclick=checkForge;
@@ -1043,17 +1267,17 @@ function duelTick(){if(DU.paused||DU.mode!=="boss")return;const left=Math.max(0,
  bar.style.width=(fr*100)+"%";bar.classList.toggle("low",fr<.25);const sec=Math.ceil(left/1000);if(sec<=10&&sec!==DU.lastTick&&left>0){DU.lastTick=sec;SND.tick();}
  if(left<=0)duelAnswer(true);}
 function duelAnswer(timeout){if(DU.paused)return;DU.paused=true;clearInterval(DU.iv);const f=DU.cur,s=FS(f);
- const res=diff(REF[f],tokenize(timeout?($("dIn").value||""):$("dIn").value,true));const ok=!timeout&&res.ok;
+ const res=(!timeout&&VOIX.take())||diff(REF[f],tokenize(timeout?($("dIn").value||""):$("dIn").value,true));VOIX.after("duel",res);const ok=!timeout&&res.ok;
  $("dRes").innerHTML=resultHTML(res.ops);$("dRes").classList.remove("hide");$("dIn").classList.add("hide");$("dSym").classList.add("hide");$("dGo").classList.add("hide");$("dNext").classList.remove("hide");
  if(DU.mode==="boss"){
   if(ok){DU.hp--;DU.wins++;SND.hit();const g=GOLEMS[DU.wi];g.g.userData.shake=1;burst(g.g.position.clone().add(new V3(0,2.5,0)),0x9a9a9a,18);
-   $("dMsg").className="msg ok";$("dMsg").textContent="💥 Touché !"+softNote(res)+` Le gardien perd un bloc.${res.minor?" Attention aux petites fautes en orange.":""}`;logEv(f,"gardien",true);}
+   $("dMsg").className=msgCls(res);$("dMsg").textContent="💥 Touché !"+softNote(res)+` Le gardien perd un bloc.${res.minor?" Attention aux petites fautes en orange.":""}`;logEv(f,"gardien",true);}
   else{DU.hearts--;DU.fails++;if(timeout)SND.timeout();SND.hurt();s.errB+=1;s.missBoss=(s.missBoss||0)+1;schedule(f,false);logEv(f,"gardien",false);
    DU.queue.splice(Math.min(1,DU.queue.length),0,f);
    $("dMsg").className="msg ko";$("dMsg").textContent=(timeout?"⏰ Temps écoulé ! ":koMsg(res,""))+`Tu perds un cœur. Les mots verts sont les bons. Cette fiche va revenir.`;}
   $("dHearts").textContent="❤️".repeat(Math.max(0,DU.hearts))+"🖤".repeat(3-Math.max(0,DU.hearts));$("dHP").firstElementChild.style.width=(DU.hp/DU.hpMax*100)+"%";$("dCount").textContent=`Gardien : ${DU.hp}/${DU.hpMax}`;
   if(DU.hearts<=0){$("dNext").textContent="Continuer ➜";DU.lost=true;}else{DU.lost=false;$("dNext").textContent=DU.hp<=0?"🏆 Victoire ➜":"Fiche suivante ➜";}}
- else{schedule(f,ok);logEv(f,"revision",ok);if(ok){SND.good();DU.wins++;$("dMsg").className="msg ok";$("dMsg").textContent="Parfait !"+softNote(res)+` Prochaine révision : ${frDate(FS(f).next)}.`;}
+ else{schedule(f,ok);logEv(f,"revision",ok);if(ok){SND.good();DU.wins++;$("dMsg").className=msgCls(res);$("dMsg").textContent="Parfait !"+softNote(res)+` Prochaine révision : ${frDate(FS(f).next)}.`;}
   else{SND.bad();DU.fails++;s.errR+=1;save();if(!DU.done.has(f)){DU.done.add(f);DU.queue.push(f);}$("dMsg").className="msg ko";$("dMsg").textContent=koMsg(res,`${res.err} bloc${res.err>1?"s":""} fissuré${res.err>1?"s":""}. Lis bien les mots verts. Elle revient à la fin, puis demain.`);}
   $("dNext").textContent=DU.queue.length?"Fiche suivante ➜":"Terminer ➜";}
  save();updateHUD();}
@@ -1111,5 +1335,15 @@ $("bPlay").onclick=()=>{IOSAU.unlock();SND.good();$("title").classList.remove("o
 window.__fg={S:()=>S,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,
  stationScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
  fps:()=>{const a=FPS.frames;return a.length?Math.round(a.length/a.reduce((x,y)=>x+y,0)):0;},player:()=>P.g.position.toArray(),pickAt:(x,y)=>{const h=pick(x,y,stationHits.concat(golemHits));const g=pick(x,y,groundMeshes);return {h:h&&h.object.userData,g:g&&g.point.toArray(),started,panelOpen};},groundScreen:(dx,dz)=>{const isl=ISL[S.world],x=isl.cx+dx,z=isl.cz+dz;return screenOf(new V3(x,groundY(x,z),z));},rails:()=>Object.keys(RAILS),calls:()=>renderer.info.render.calls};
+
+/* ---- micro et Papa écoute ---- */
+VOIX.attach("forge",{field:$("fText"),anchor:$("fTyping"),fiche:()=>FG.f,papaOK:()=>FG.practice||FG.pass===4,canRedo:()=>!FG.practice,
+ retry:t=>{$("fAgain").click();$("fText").value=t;checkForge();},
+ papa:(g,f)=>{checkForge();papaNote(f,{coeur:"parcoeur",presque:"difficile",revoir:"nonsu"}[g]);save();}});
+VOIX.attach("duel",{field:$("dIn"),fiche:()=>DU.cur,canRedo:()=>false,
+ papa:(g,f)=>{duelAnswer(false);papaNote(f,{coeur:"parcoeur",presque:"difficile",revoir:"nonsu"}[g]);save();},
+ pause:()=>{if(!DU._p){DU._p=performance.now();DU._wasP=DU.paused;DU.paused=true;}},
+ resume:()=>{if(DU._p){DU.t0+=performance.now()-DU._p;DU._p=0;DU.paused=DU._wasP;}}});
+window.__voix=VOIX;
 
 </script></body></html>
