@@ -249,14 +249,14 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
 <div id="hud" class="hide">
  <div id="topL"><button id="wPrev" class="mc" aria-label="Monde précédent">◀</button><div id="wChip"><b id="wName"></b><small id="wSub"></small></div><button id="wNext" class="mc" aria-label="Monde suivant">▶</button></div>
  <div id="topR"><button id="bRev" class="mc gold hide">🔁 Révision<i id="revN">0</i></button><button id="bInv" class="mc">🎒 Coffre</button><button id="bSnd" class="mc">🔊</button><button id="bPar" class="mc">🔒 Parent</button></div>
- <div id="bottom"><div id="stat"></div><div id="modeBtns"><button id="bRails" class="mc">🛤️ Poser des rails</button><button id="bRHelp" class="mc">❓ Les rails</button><button id="bHint" class="mc hide">💡 Indice</button><button id="bDuel" class="mc gold hide">⚔️ Défier le gardien</button></div></div>
+ <div id="bottom"><div id="stat"></div><div id="modeBtns"><button id="bRHelp" class="mc">❓ Les rails</button><button id="bDuel" class="mc gold hide">⚔️ Défier le gardien</button></div></div>
  <div id="toast"></div>
 </div>
 <div id="title" class="ov on">
  <h1>⛏️ La Mine du Par Cœur</h1>
- <p>Forge les fiches mot à mot. Relie le réseau. Bats les gardiens.</p>
+ <p>Forge les fiches mot à mot. Bats les gardiens.</p>
  <button id="bPlay" class="mc big gold">Jouer</button>
- <div class="how">Touche une enclume pour forger une fiche.<br>Glisse un doigt pour tourner la caméra. Pince pour zoomer.</div>
+ <div class="how">Touche une enclume pour forger une fiche.<br>Les rails sont déjà sur la carte : touche une icône pour lire le lien.<br>Glisse un doigt pour tourner la caméra. Pince pour zoomer.</div>
 </div>
 <div id="forge" class="panel">
  <button class="mc xbtn" data-close="forge">✖</button>
@@ -270,31 +270,7 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
  <div class="msg" id="fMsg"></div>
  <div class="row"><button id="fGo" class="mc gold">🔨 Frapper l'enclume</button><button id="fAgain" class="mc hide">🔁 Recommencer la passe</button><button id="fNext" class="mc green hide">Passe suivante ➜</button></div>
 </div>
-<div id="link" class="panel">
- <button class="mc xbtn" data-close="link">✖</button>
- <h2>🛤️ Nouveau lien <button type="button" class="mc" id="lkHelp" style="font-size:15px;padding:4px 10px;vertical-align:middle">❓ Aide</button></h2>
- <p id="lkInstr">Voici pourquoi ces deux fiches vont ensemble.</p>
- <div id="lkPair"></div>
- <div id="lkPeek"></div>
- <div id="lkType" class="lktype"></div>
- <div id="lkModel" class="lkmodel"></div>
- <div class="row"><button id="lkDone" class="mc green">Compris, on continue</button></div>
- <div id="lkBonus">
-  <button type="button" id="lkBonusBtn" class="mc">🎤 Je le redis (en plus)</button>
-  <div id="lkStep2" class="hide">
-   <div id="lkTyping"><textarea id="lkIn" class="txt" rows="3" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Si tu veux, dis ou écris le lien ici. Ce n'est pas obligatoire."></textarea></div>
-   <div class="row"><button id="lkOk" class="mc">Vérifier (bonus)</button></div>
-  </div>
- </div>
- <div class="msg" id="lkMsg"></div>
- <div id="lkWhy" class="hide"></div>
- <div id="lkSlot" class="hide"></div>
- <div id="lkLabels" class="hide"></div>
- <div id="lkPasses" class="hide"></div>
- <div id="lkQ" class="hide"></div>
- <div id="lkRetry" class="hide"></div>
- <div id="lkGaps" class="hide"></div>
-</div>
+<div id="link" class="panel" aria-hidden="true"></div>
 <div id="duel" class="panel">
  <button class="mc xbtn" id="dQuit">✖</button>
  <h2 id="dHead"></h2>
@@ -714,8 +690,9 @@ if(S.sound===undefined)S.sound=true;
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
 function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 const today=()=>dstr(new Date());
-/* anciennes 3 passes des rails : un lien commencé est déjà acquis, sans rebloquer */
+/* anciennes 3 passes / rails à poser : tous les liens sont déjà acquis, sans rebloquer */
 for(const k of Object.keys(S.linkLearn||{})){if(k&&!S.links[k])S.links[k]=today();}
+for(const L of LINKS){if(!S.links[L.key])S.links[L.key]=today();}
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return dstr(d)}
 const INT=[1,3,7,14,28];
 const LVNAME=["À revoir","Fragile","En cours","Solide","Par cœur"];
@@ -732,7 +709,7 @@ function papaNote(f,k){const s=FS(f);s.papa.push({d:today(),k});s.last=today();
  logEv(f,"papa:"+k,k!=="nonsu");save();}
 function dueList(){const t=today();return Object.keys(S.f).map(Number).filter(f=>S.f[f].forged&&S.f[f].next&&S.f[f].next<=t).sort((a,b)=>S.f[a].level-S.f[b].level||a-b);}
 function worldState(i){const w=WORLDS[i];const forged=w.fiches.filter(f=>FS(f).forged).length;const L=LINKS.filter(l=>l.w===i);const lk=L.filter(l=>S.links[l.key]).length;
- return {forged,n:w.fiches.length,links:lk,nl:L.length,awake:forged===w.fiches.length&&lk===L.length,beaten:!!S.boss[w.id],unlocked:i<S.unlocked};}
+ return {forged,n:w.fiches.length,links:L.length,nl:L.length,awake:forged===w.fiches.length,beaten:!!S.boss[w.id],unlocked:i<S.unlocked};}
 
 /* ================= SONS (WebAudio, générés) ================= */
 /* ===== Déblocage du son sur iPad (partagé entre les jeux) =====
@@ -1070,7 +1047,7 @@ const LIENS=(()=>{
  function clearMarks(){const d=document.getElementById("lnMarks");if(d)d.innerHTML="";window.__lnMarkRects=[];}
  /* aide : à quoi sert un rail / une voie */
  function helpHTML(kind){const V=kind==="voie";const un=V?"une voie":"un rail",Un=V?"Une voie":"Un rail";
-  const how=V?"Glisse ton doigt d'une station ouverte à une autre.":"Touche « 🛤️ Poser des rails », puis une fiche, puis une autre.";
+  const how=V?"Glisse ton doigt d'une station ouverte à une autre.":"Les rails sont déjà posés sur la carte. Tu n'as pas à les poser.";
   return `<div class="lnbox"><h2>${V?"🚆 À quoi sert une voie ?":"🛤️ À quoi sert un rail ?"}</h2>
    <p>Tes fiches ne sont pas seules. Certaines vont ensemble.</p>
    <p><b>${Un} relie deux fiches quand l'une aide à comprendre ou à utiliser l'autre.</b></p>
@@ -1080,7 +1057,7 @@ const LIENS=(()=>{
    <div class="lntypes">${Object.keys(TYPES).map(k=>`<div class="lnty1"><span class="lnico">${TYPES[k].icon}</span><div><b>${TYPES[k].plain}</b><br>${TYPES[k].why}<br><i>Exemple : ${TYPES[k].ex}</i></div></div>`).join("")}</div>
    ${listHTML(kind)}
    <h3>Comment faire ?</h3>
-   <ol><li>${how}</li><li>${V?"Choisis la sorte de lien.":"Le jeu te montre la sorte de lien et pourquoi les deux fiches vont ensemble."}</li><li>${V?"Dis pourquoi : tape un mot, ou dicte au micro 🎤.":"Lis l'explication. Tu n'as rien à écrire pour continuer. Touche « Compris, on continue ». Si tu veux, tu peux aussi le redire (c'est en plus)."}</li><li>Sur la carte, chaque ${un} déjà posé montre une icône. Touche-la pour revoir pourquoi les deux fiches vont ensemble.</li><li>Si les deux fiches ne vont pas ensemble, ${un} casse. Ce n'est pas grave : une piste t'aide.</li></ol>
+   <ol>${V?`<li>${how}</li><li>Choisis la sorte de lien.</li><li>Dis pourquoi : tape un mot, ou dicte au micro 🎤.</li><li>Sur la carte, chaque ${un} déjà posé montre une icône. Touche-la pour revoir pourquoi les deux fiches vont ensemble.</li><li>Si les deux fiches ne vont pas ensemble, ${un} casse. Ce n'est pas grave : une piste t'aide.</li>`:`<li>${how}</li><li>Chaque rail a une icône : c'est la sorte de lien.</li><li>Touche l'icône (ou le rail) pour voir les deux fiches, l'icône et une courte explication.</li><li>Lis, puis touche Fermer.</li>`}</ol>
    <div class="lnbtns"><button type="button" class="lnok" id="lnHelpOk">✔ J'ai compris</button></div></div>`;}
  let onDone=null;
  function openHelp(kind,cb){closeBubble();let ov=document.getElementById("lnHelp");if(!ov){ov=document.createElement("div");ov.id="lnHelp";document.body.appendChild(ov);}
@@ -1475,7 +1452,7 @@ const VOIX={bars:{},pending:null,denied:false,cur:null,
 let started=false,railMode=false,railSel=null;
 const PANELS=["forge","link","duel","inv","gate","parent","pop"];
 function openPanel(id){$(id).classList.add("on");$(id).scrollTop=0;panelOpen=true;}
-function closePanel(id){$(id).classList.remove("on");panelOpen=PANELS.some(p=>$(p).classList.contains("on"));if(id==="link")linkClosed();if(id==="forge")FG.f=null;updateHUD();}
+function closePanel(id){$(id).classList.remove("on");panelOpen=PANELS.some(p=>$(p).classList.contains("on"));if(id==="forge")FG.f=null;updateHUD();}
 document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>{SND.click();closePanel(b.dataset.close)}));
 let toastT=0;function toast(msg,ms=2800){const t=$("toast");t.innerHTML=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),ms);}
 function pop(title,html,btns){$("popT").innerHTML=title;$("popB").innerHTML=html;const r=$("popBtns");r.innerHTML="";
@@ -1492,9 +1469,7 @@ symbar($("fSym"),"fText");symbar($("dSym"),"dIn");
 function updateHUD(){const i=S.world,w=WORLDS[i],ws=worldState(i);
  $("wName").textContent=(w.bonus?"Bonus":"Monde "+(i+1))+" · "+w.name;$("wSub").textContent=ws.unlocked?w.sub:"🔒 Fermé";
  $("wPrev").disabled=i===0;$("wNext").disabled=i===WORLDS.length-1;
- $("stat").innerHTML=ws.unlocked?`⛏️ Fiches forgées ${ws.forged}/${ws.n} · 🛤️ Liens ${ws.links}/${ws.nl} · ${ws.beaten?"🏆 Gardien vaincu":ws.awake?"⚔️ Gardien réveillé":"💤 Gardien endormi"}`:(w.bonus?"🔒 Monde bonus : bats le gardien Triangle pour l'ouvrir.":`🔒 Bats le gardien du monde ${i} pour ouvrir ce monde.`);
- $("bRails").classList.toggle("on",railMode);$("bRails").textContent=railMode?"✋ Arrêter les rails":"🛤️ Poser des rails";$("bRails").classList.toggle("hide",!ws.unlocked);
- $("bHint").classList.toggle("hide",!railMode);
+ $("stat").innerHTML=ws.unlocked?`⛏️ Fiches forgées ${ws.forged}/${ws.n} · ${ws.beaten?"🏆 Gardien vaincu":ws.awake?"⚔️ Gardien réveillé":"💤 Gardien endormi"}`:(w.bonus?"🔒 Monde bonus : bats le gardien Triangle pour l'ouvrir.":`🔒 Bats le gardien du monde ${i} pour ouvrir ce monde.`);
  $("bDuel").classList.toggle("hide",!(ws.unlocked&&ws.awake));$("bDuel").textContent=ws.beaten?"⚔️ Revanche contre le gardien":"⚔️ Défier le gardien";
  const due=dueList().length;$("bRev").classList.toggle("hide",!due);$("revN").textContent=due;
  $("bSnd").textContent=S.sound?"🔊":"🔇";}
@@ -1503,11 +1478,6 @@ function setWorld(i){i=Math.max(0,Math.min(WORLDS.length-1,i));S.world=i;save();
 $("wPrev").onclick=()=>{SND.click();setWorld(S.world-1)};$("wNext").onclick=()=>{SND.click();setWorld(S.world+1)};
 $("bSnd").onclick=()=>{S.sound=!S.sound;save();updateHUD();if(S.sound){IOSAU.unlock();SND.click();}};
 $("bRHelp").onclick=()=>{SND.click();LIENS.openHelp("rail");};
-$("lkHelp").onclick=()=>{SND.click();LIENS.openHelp("rail");};
-$("bRails").onclick=()=>{SND.click();if(!railMode&&!S.railIntro){LIENS.openHelp("rail",()=>{S.railIntro=today();save();$("bRails").click();});return;}railMode=!railMode;clearSel();updateHUD();if(railMode)toast("🛤️ Touche une enclume, puis une autre fiche qui va avec.<br>Les deux fiches doivent être forgées.",4000);};
-$("bHint").onclick=()=>{SND.hint();const i=S.world;const L=LINKS.filter(l=>l.w===i&&!S.links[l.key]);const ok=L.find(l=>FS(l.a).forged&&FS(l.b).forged);
- if(!L.length)return toast("Le réseau de ce monde est complet !");if(!ok)return toast("Forge d'abord d'autres fiches de ce monde.");
- const f=Math.random()<.5?ok.a:ok.b;burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffe060,22);toast(`💡 La fiche ${f} attend encore un lien. Avec quelle fiche va-t-elle ?`,4000);};
 $("bDuel").onclick=()=>{SND.click();startBoss(S.world)};
 $("bRev").onclick=()=>{SND.click();startReview()};
 $("bInv").onclick=()=>{SND.click();openInv()};
@@ -1523,6 +1493,10 @@ function updateRailMarks(){const hide=!started||panelOpen||LIENS.isHelpOpen()||L
  const pts=[];for(const k in RAILS){const R=RAILS[k];if(!R.powered)continue;const L=LINKS.find(l=>l.key===k);if(!L||L.w!==S.world)continue;
   const mid=R.pts[Math.floor(R.pts.length/2)].clone();mid.y+=.75;const s=screenOf(mid);const T=LIENS.TYPES[L.t];
   pts.push({key:k,icon:T.icon,x:s[0],y:s[1],label:T.plain+" : "+(LIENS.SHORT[L.a]||"")+" et "+(LIENS.SHORT[L.b]||"")});}
+ const signs=window.__signRects||[],pad=36;
+ for(const p of pts){for(let n=0;n<6;n++){const hit=signs.find(s=>p.x>s.l-pad&&p.x<s.r+pad&&p.y>s.t-pad&&p.y<s.b+pad);if(!hit)break;
+  const cx=(hit.l+hit.r)/2,cy=(hit.t+hit.b)/2,dx=p.x-cx,dy=p.y-cy,len=Math.hypot(dx,dy)||1,rad=Math.max(hit.r-hit.l,hit.b-hit.t)/2+pad+6;
+  p.x=cx+(dx/len)*rad;p.y=cy+(dy/len)*rad;}}
  LIENS.placeMarks(pts,key=>{const L=LINKS.find(l=>l.key===key);openRailBubble(L);});}
 function onTap(x,y){if(panelOpen||!started||LIENS.isBubbleOpen()||LIENS.isHelpOpen())return;
  const h=pick(x,y,stationHits.concat(golemHits));
@@ -1532,50 +1506,11 @@ function onTap(x,y){if(panelOpen||!started||LIENS.isBubbleOpen()||LIENS.isHelpOp
  if(Math.hypot(g.point.x-isl.cx,g.point.z-isl.cz)<isl.R-1&&HM.has(hk(Math.round(g.point.x),Math.round(g.point.z))))walkTo(g.point.x,g.point.z);}
 function tapStation(f){const wi=FW[f];if(wi!==S.world)return;const ws=worldState(wi);
  if(!ws.unlocked){SND.locked();return toast("🔒 Ce monde est fermé.");}
- if(railMode)return railTap(f);
  const s=STN[f],isl=s.isl,dir=new V3(isl.cx-s.pos.x,0,isl.cz-s.pos.z).normalize();
  SND.click();walkTo(s.pos.x+dir.x*1.4,s.pos.z+dir.z*1.4,()=>{P.g.rotation.y=Math.atan2(s.pos.x-P.g.position.x,s.pos.z-P.g.position.z);SND.anvil();burst(s.pos.clone().add(new V3(0,1.5,0)),0xffc040,8);openForge(f);});}
 function tapGolem(i){if(i!==S.world)return;const ws=worldState(i);if(!ws.unlocked){SND.locked();return toast("🔒 Ce monde est fermé.");}
  if(ws.awake){startBoss(i);return;}
- SND.nudge();toast(`💤 Zzz… Forge toutes les fiches (${ws.forged}/${ws.n}) et relie tout le réseau (${ws.links}/${ws.nl}) pour me réveiller.`,4200);}
-/* ---------- rails ---------- */
-let LK=null;
-function railTap(f){if(!FS(f).forged){SND.bad();return toast(`Forge d'abord la fiche ${f}.`);}
- if(!railSel){railSel=f;STN[f].sign.scale.set(SIGNW*1.3,SIGNH*1.3,1);SND.click();burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffe060,10);LIENS.selShow(f,FICHES[f],"Fiche choisie. Touche l'autre fiche qui va avec.");return;}
- if(railSel===f){clearSel();SND.click();return toast("Choix annulé.");}
- const a=railSel,b=f;clearSel();const L=findLink(a,b);
- if(L&&S.links[L.key]){SND.nudge();}if(L&&S.links[L.key])return toast(`Les fiches ${a} et ${b} sont déjà reliées. ⚡`);
- const A=L?L.a:a,B=L?L.b:b;const R=layRails(A,B,true,false);const dur=R.tiles.length*55+450;
- setTimeout(()=>{if(!L){removeRails(R.key,true);SND.breakR();S.stats.badLinks++;save();toast(`💥 Les rails cassent. `+LIENS.badPair(a,b,LINKS.filter(l=>l.w===FW[a]),l=>!!S.links[l.key],x=>FS(x).forged),7000);}
-  else openLink(L);},dur);}
-function chip(f){return `<button class="chip" data-peek="${f}"><span class="badge ${FICHES[f].t}">${FICHES[f].t}${f}</span>${esc(FICHES[f].title)}</button>`;}
-function learnSt(key){S.linkLearn=S.linkLearn||{};return S.linkLearn[key]||(S.linkLearn[key]={typ:false,pass:1});}
-function openLink(L){if(typeof LIENS!=="undefined")LIENS.remindHide();LK={L,step:1,done:false,wrong:0};
- const T=LIENS.typ(L.t);
- $("lkInstr").textContent="Voici pourquoi ces deux fiches vont ensemble.";
- $("lkPair").innerHTML=`<div class="lkcards" id="lkCards">${LIENS.card(L.a,FICHES[L.a])}${LIENS.card(L.b,FICHES[L.b])}</div><p style="font-size:14px;opacity:.85">Touche une fiche pour la relire.</p>`;
- $("lkPeek").innerHTML="";
- $("lkType").innerHTML=`<span class="lnico">${T.icon}</span><div><b>${esc(T.plain)}</b></div>`;
- $("lkModel").textContent=L.ex||"";$("lkModel").classList.remove("hide");
- $("lkMsg").textContent="";$("lkMsg").className="msg";
- $("lkIn").value="";$("lkStep2").classList.add("hide");
- $("lkDone").classList.remove("hide");$("lkDone").textContent="Compris, on continue";
- $("lkBonusBtn").classList.remove("hide");
- $("lkCards")&&$("lkCards").querySelectorAll(".lncard").forEach((c,i)=>{const f=i===0?L.a:L.b;c.dataset.peek=f;c.onclick=()=>{$("lkPeek").innerHTML=`<div class="ftext"><b>Fiche ${f} · ${esc(FICHES[f].title)}</b><br>${ficheHTML(f)}</div>`;};});
- openPanel("link");}
-function ackLink(){if(!LK||LK.done)return;const L=LK.L;LK.done=true;
- S.links[L.key]=today();const said=($("lkIn").value||"").trim();LIENS.setReason(L.key,said||(L.ex||""));
- const st=learnSt(L.key);st.typ=true;st.pass=4;save();powerRails(L.key,true);SND.good();
- closePanel("link");
- const ws=worldState(L.w);toast(`⚡ Réseau alimenté ! Liens ${ws.links}/${ws.nl}. Touche l'icône sur le rail pour revoir le lien.`);updateHUD();
- if(ws.awake&&!ws.beaten)setTimeout(()=>{SND.wake();refreshGolem(L.w);GOLEMS[L.w].g.userData.shake=1;pop("⚔️ Le gardien se réveille !","<p>Le réseau est complet. Le gardien de ce monde veut te tester.</p><p>Il te donne le titre ou le début d'une fiche. Tu dois taper toute la fiche avant la fin du temps. Tu as 3 cœurs.</p>",[{t:"⚔️ Combattre",fn:()=>startBoss(L.w)},{t:"Plus tard",cls:""}]);},900);}
-$("lkDone").onclick=()=>{if(!LK)return;ackLink();};
-$("lkBonusBtn").onclick=()=>{if(!LK||LK.done)return;SND.click();$("lkStep2").classList.remove("hide");$("lkBonusBtn").classList.add("hide");setTimeout(()=>{try{$("lkIn").focus({preventScroll:true})}catch(_){}},60);};
-$("lkOk").onclick=()=>{if(!LK||LK.done)return;const v=$("lkIn").value;
- if(LIENS.match(v,LK.L)||(typeof LIENS.matchCopy==="function"&&LIENS.matchCopy(v,LK.L))){SND.good();$("lkMsg").className="msg ok";$("lkMsg").textContent="Bravo ! Tu t'en souvenais. Tu peux continuer.";}
- else{SND.nudge();$("lkMsg").className="msg";$("lkMsg").textContent="Ce n'est pas grave. Le lien est écrit au-dessus. Tu peux continuer.";}};
-$("lkIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("lkOk").click();}});
-function linkClosed(){if(LK&&!LK.done){removeRails(LK.L.key,true);}LK=null;}
+ SND.nudge();toast(`💤 Zzz… Forge toutes les fiches (${ws.forged}/${ws.n}) pour me réveiller.`,4200);}
 /* ---------- FORGE DES MOTS ---------- */
 const FG={f:null,pass:1,practice:false,gaps:null,seed:0,res:false};
 const INSTR={1:"Passe 1 sur 4. Lis la fiche, puis recopie-la en entier.",2:"Passe 2 sur 4. Des blocs ont disparu. Tape les mots qui manquent. La barre d'espace passe au trou suivant.",3:"Passe 3 sur 4. Il manque beaucoup de blocs. Courage !",4:"Passe 4 sur 4. Il ne reste que le titre. Tape toute la fiche de mémoire."};
@@ -1648,8 +1583,12 @@ $("fNext").onclick=()=>{SND.click();FG.pass=FS(FG.f).pass;FG.gaps=null;renderFor
 function forgeDone(f,mnote){const s=FS(f);s.forged=true;s.forgedOn=today();s.level=0;s.next=addDays(1);s.last=today();logEv(f,"forge",true);save();refreshStation(f);
  closePanel("forge");SND.forged();burst(STN[f].pos.clone().add(new V3(0,2,0)),0xffd040,30);
  const it=itemOf(f),ws=worldState(FW[f]);
- pop("✨ Fiche forgée !",`<div class="itemPop fx"><img src="${iconURL(f)}" alt=""><div><p><b>Fiche ${f} · ${esc(FICHES[f].title)}</b></p><p>Tu gagnes : <b>${it.name}</b></p><p>Elle reviendra demain en révision.${mnote||""}</p></div></div>`+
-  (ws.forged===ws.n?`<p>🛤️ Toutes les fiches de ce monde sont forgées. Pose maintenant des rails entre les fiches qui vont ensemble.</p>`:ws.forged>=2&&ws.links<ws.nl?`<p>Astuce : avec 🛤️ Poser des rails, tu peux déjà relier des fiches forgées.</p>`:""),[{t:"Super !"}]);updateHUD();}
+ const last=ws.forged===ws.n;
+ const extra=last?`<p>Toutes les fiches de ce monde sont forgées. Le gardien se réveille !</p>`:"";
+ const afterForge=()=>{if(last&&!ws.beaten){SND.wake();refreshGolem(FW[f]);GOLEMS[FW[f]].g.userData.shake=1;
+  pop("⚔️ Le gardien se réveille !","<p>Toutes les fiches de ce monde sont forgées. Le gardien de ce monde veut te tester.</p><p>Il te donne le titre ou le début d'une fiche. Tu dois taper toute la fiche avant la fin du temps. Tu as 3 cœurs.</p>",[{t:"⚔️ Combattre",fn:()=>startBoss(FW[f])},{t:"Plus tard",cls:""}]);}};
+ pop("✨ Fiche forgée !",`<div class="itemPop fx"><img src="${iconURL(f)}" alt=""><div><p><b>Fiche ${f} · ${esc(FICHES[f].title)}</b></p><p>Tu gagnes : <b>${it.name}</b></p><p>Elle reviendra demain en révision.${mnote||""}</p></div></div>`+extra,[{t:"Super !",fn:afterForge}]);
+ updateHUD();}
 /* ---------- DUEL DU GARDIEN ET RÉVISION DU JOUR ---------- */
 const DU={on:false,mode:"boss",wi:0,queue:[],hearts:3,hp:0,hpMax:0,cur:null,t0:0,tLen:0,paused:true,lastTick:0,wins:0,fails:0,iv:0};
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -1716,36 +1655,36 @@ $("gIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("gOk").click();});
 let PSORT="weak";
 function openParent(){renderParent();openPanel("parent");}
 function renderParent(){const due=dueList();
- const sum=WORLDS.map((w,i)=>{const ws=worldState(i);return `<div style="border-color:${w.css}"><span style="color:${w.css}">${esc(w.name)}</span><br>Forgées ${ws.forged}/${ws.n}<br>Liens ${ws.links}/${ws.nl}<br>${ws.beaten?"🏆 Gardien vaincu le "+frDate(S.boss[w.id]):ws.unlocked?"Gardien pas encore battu":"🔒 Fermé"}</div>`;}).join("");
+ const sum=WORLDS.map((w,i)=>{const ws=worldState(i);return `<div style="border-color:${w.css}"><span style="color:${w.css}">${esc(w.name)}</span><br>Forgées ${ws.forged}/${ws.n}<br>${ws.beaten?"🏆 Gardien vaincu le "+frDate(S.boss[w.id]):ws.unlocked?"Gardien pas encore battu":"🔒 Fermé"}</div>`;}).join("");
  const all=[];WORLDS.forEach(w=>w.fiches.forEach(f=>all.push(f)));
  const rows=all.slice().sort((a,b)=>{if(PSORT==="num")return a-b;const A=FS(a),B=FS(b);if(A.forged!==B.forged)return A.forged?-1:1;return A.level-B.level||(A.next||"").localeCompare(B.next||"")||a-b;});
  const lv=s=>s.forged?`<span class="lv lv${s.level}">${LVNAME[s.level]}</span>`:`<span class="lv lvn">${s.pass>1?"Passe "+s.pass+"/4":"Pas forgée"}</span>`;
  const RN={nonsu:"Non su",difficile:"Difficile",parcoeur:"Par cœur"};
  const tr=rows.map(f=>{const s=FS(f),w=WORLDS[FW[f]],pn=s.papa.length?s.papa[s.papa.length-1]:null;
   return `<tr><td><b>${f}</b> <span class="badge ${FICHES[f].t}" style="height:22px;min-width:22px;font-size:12px">${FICHES[f].t}</span> ${esc(FICHES[f].title)}<br><button class="mc" data-txt="${f}">📜 Texte</button></td><td style="color:${w.css};font-weight:800">${esc(w.name)}</td><td>${lv(s)}</td><td>${s.forged?(s.next<=today()?"<b>Aujourd'hui</b>":frDate(s.next)):"·"}</td><td>${s.errF}/${s.errB}/${s.errR}${s.minor?` <small>(${s.minor} accents)</small>`:""}</td><td>${frDate(s.last)}</td><td>${pn?`<span class="k-${pn.k}">${RN[pn.k]}</span> ${frDate(pn.d)}<br><small>${s.papa.length} note${s.papa.length>1?"s":""}</small>`:"·"}</td><td><button class="mc red" data-n="${f}" data-k="nonsu">Non su</button><button class="mc gold" data-n="${f}" data-k="difficile">Difficile</button><button class="mc green" data-n="${f}" data-k="parcoeur">Par cœur</button></td></tr><tr class="hide" id="ptx${f}"><td colspan="8"><div class="ftext">${ficheHTML(f)}</div></td></tr>`;}).join("");
-  const net=LIENS.listHTML("rail")||`<p>Aucun rail posé pour l'instant.</p>`;
+  const net=LIENS.listHTML("rail")||`<p>Les rails sont déjà sur la carte. Touche une icône pour lire le lien.</p>`;
  $("pBody").innerHTML=`<p>Après une récitation orale, choisissez une note. Elle change la date de la prochaine révision : Non su revient demain, Difficile dans 3 jours, Par cœur de plus en plus tard (7, 14, 28 jours).</p>
- <div class="sum">${sum}<div>🔁 À réviser aujourd'hui<br><span class="big1">${due.length}</span><br>${due.map(f=>"fiche "+f).join(", ")||"rien"}</div><div>Rails cassés (mauvais liens)<br><span class="big1">${S.stats.badLinks||0}</span></div></div>
+ <div class="sum">${sum}<div>🔁 À réviser aujourd'hui<br><span class="big1">${due.length}</span><br>${due.map(f=>"fiche "+f).join(", ")||"rien"}</div></div>
  <div class="row"><button class="mc ${PSORT==="weak"?"gold":""}" id="pSortW">Les moins sues d'abord</button><button class="mc ${PSORT==="num"?"gold":""}" id="pSortN">Par numéro</button></div>
  <p style="font-size:14px">Erreurs = passes de forge ratées / duels ratés / révisions ratées.</p>
  <div style="overflow-x:auto"><table class="pt"><tr><th>Fiche</th><th>Monde</th><th>Maîtrise</th><th>Prochaine révision</th><th>Erreurs</th><th>Dernière fois</th><th>Note de papa</th><th>Noter la récitation</th></tr>${tr}</table></div>
- <h2 style="margin-top:14px">🛤️ Les rails</h2>${net}
+ <h2 style="margin-top:14px">🛤️ Les rails (déjà sur la carte)</h2>${net}
  <div class="row"><button class="mc" id="pUnlock">Ouvrir tous les mondes</button><button class="mc red" id="pReset">Tout effacer</button></div>`;
  $("pBody").querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{const f=+b.dataset.n;papaNote(f,b.dataset.k);SND.papa();renderParent();updateHUD();toast(`Note enregistrée pour la fiche ${f}. Prochaine révision : ${frDate(FS(f).next)}.`);});
  $("pBody").querySelectorAll("[data-txt]").forEach(b=>b.onclick=()=>$("ptx"+b.dataset.txt).classList.toggle("hide"));
  LIENS.bindList($("pBody"));
  $("pSortW").onclick=()=>{PSORT="weak";renderParent()};$("pSortN").onclick=()=>{PSORT="num";renderParent()};
  $("pUnlock").onclick=()=>{S.unlocked=WORLDS.length;save();GOLEMS.forEach((_,i)=>refreshGolem(i));updateHUD();renderParent();toast("Tous les mondes sont ouverts.");};
- $("pReset").onclick=()=>{closePanel("parent");pop("Tout effacer ?","<p>Toute la progression sera perdue : fiches forgées, réseau, gardiens, notes.</p>",[{t:"Oui, tout effacer",cls:"red",fn:()=>{localStorage.removeItem(SKEY);location.reload();}},{t:"Annuler",cls:""}]);};}
+ $("pReset").onclick=()=>{closePanel("parent");pop("Tout effacer ?","<p>Toute la progression sera perdue : fiches forgées, gardiens, notes.</p>",[{t:"Oui, tout effacer",cls:"red",fn:()=>{localStorage.removeItem(SKEY);location.reload();}},{t:"Annuler",cls:""}]);};}
 /* ---------- DÉMARRAGE ---------- */
 for(const f in STN)refreshStation(+f);
-for(const L of LINKS)if(S.links[L.key])layRails(L.a,L.b,false,true);
+for(const L of LINKS)layRails(L.a,L.b,false,true);
 GOLEMS.forEach((_,i)=>refreshGolem(i));
 placePlayer(S.world);camFor(S.world);CAM.target.copy(islandCenter(S.world));CAM.dist=CAM.tDist+10;
 updateHUD();requestAnimationFrame(loop);
 $("bPlay").onclick=()=>{IOSAU.unlock();SND.good();$("title").classList.remove("on");$("hud").classList.remove("hide");started=true;CAM.auto=false;
  const ws=worldState(S.world);if(!ws.forged&&S.world===0)toast("⛏️ Touche une enclume pour forger ta première fiche.",4500);else if(dueList().length)toast(`🔁 ${dueList().length} fiche${dueList().length>1?"s":""} à réviser aujourd'hui.`,4000);};
-window.__fg={LIENS,railMode:()=>railMode,S:()=>S,FS,nextRound,renderForge,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,railAt,updateRailMarks,openRailBubble,learnSt,openLink,ackLink,LK:()=>LK,
+window.__fg={LIENS,railMode:()=>false,S:()=>S,FS,nextRound,renderForge,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,railAt,updateRailMarks,openRailBubble,
  stationScreen:f=>{const r=FW[f]===S.world&&(window.__signRects||[]).find(r=>r.f===f);return r?[(r.l+r.r)/2,(r.t+r.b)/2]:screenOf(STN[f].pos.clone().add(new V3(0,1.2,0)));},anvilScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
  fps:()=>{const a=FPS.frames;return a.length?Math.round(a.length/a.reduce((x,y)=>x+y,0)):0;},player:()=>P.g.position.toArray(),pickAt:(x,y)=>{const h=pick(x,y,stationHits.concat(golemHits));const g=pick(x,y,groundMeshes);return {h:h&&h.object.userData,g:g&&g.point.toArray(),started,panelOpen};},groundScreen:(dx,dz)=>{const isl=ISL[S.world],x=isl.cx+dx,z=isl.cz+dz;return screenOf(new V3(x,groundY(x,z),z));},rails:()=>Object.keys(RAILS),railIcons:()=>Object.keys(RAILS).filter(k=>RAILS[k].powered).map(k=>({key:k,t:(LINKS.find(l=>l.key===k)||{}).t})),
  iconScreen:key=>{const m=(window.__lnMarkRects||[]).find(r=>r.key===key);return m?[m.x,m.y]:null;},
@@ -1761,7 +1700,6 @@ VOIX.attach("duel",{field:$("dIn"),fiche:()=>DU.cur,canRedo:()=>false,
  papa:(g,f)=>{duelAnswer(false);papaNote(f,{coeur:"parcoeur",presque:"difficile",revoir:"nonsu"}[g]);save();},
  pause:()=>{if(!DU._p){DU._p=performance.now();DU._wasP=DU.paused;DU.paused=true;}},
  resume:()=>{if(DU._p){DU.t0+=performance.now()-DU._p;DU._p=0;DU.paused=DU._wasP;}}});
-VOIX.attach("link",{field:$("lkIn"),anchor:$("lkTyping"),fiche:()=>null,papaOK:()=>false,barOK:()=>!!(LK&&!LK.done&&$("link").classList.contains("on")&&$("lkStep2")&&!$("lkStep2").classList.contains("hide")),canRedo:()=>false,papa:()=>{}});
 window.__voix=VOIX;
 
 </script><!--CLAVIER--><style>/* CLAVIER iPad : mode « clavier ouvert » */
