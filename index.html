@@ -227,6 +227,15 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
 .lnw{margin:8px 0 2px}
 .lnrow{display:flex;gap:10px;align-items:flex-start;text-align:left;background:#fff;border:1px solid #e0d6bd;border-radius:10px;padding:8px 10px;font:16px/1.35 system-ui,-apple-system,sans-serif;cursor:pointer;width:100%;color:#222}
 .lnrow .lnico{font-size:28px;line-height:1;flex:none}
+
+.lkmodel{background:#f4ecd8;color:#1b1b1b;border:3px solid #111;padding:12px 14px;margin:8px 0;font-size:18px;line-height:1.45;font-weight:600;box-shadow:inset 3px 3px 0 #0003}
+.lkgaps{background:#1c1c1c;border:3px solid #111;padding:12px 14px;margin:8px 0;line-height:2.15;font-size:17px;color:#f4ecd8}
+.lkgap{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px 8px}
+.lkhint{font-size:12px;font-weight:700;color:#ffe25a;line-height:1.15;margin-top:2px;text-shadow:1px 1px 0 #000}
+#lkIn{min-height:72px}
+#lkInstr{font-weight:700}
+
+#lkOk,#lkRetry,#lkDone{white-space:nowrap}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="hud" class="hide">
@@ -261,7 +270,15 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px;background:#0007}
  <p><b>1.</b> Quelle sorte de lien ? Glisse le bon bloc sur les rails.</p>
  <div class="slot" id="lkSlot">Pose un bloc ici</div>
  <div class="lbls" id="lkLabels"></div>
- <div id="lkStep2" class="hide"><p><b>2.</b> <span id="lkQ"></span></p><input id="lkIn" class="txt" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="row"><button id="lkOk" class="mc gold">⚡ Alimenter le réseau</button></div></div>
+ <div id="lkStep2" class="hide">
+  <div class="passes" id="lkPasses"></div>
+  <p id="lkInstr"></p>
+  <p id="lkQ" class="hide"></p>
+  <div id="lkModel" class="lkmodel hide"></div>
+  <div id="lkGaps" class="lkgaps hide"></div>
+  <div id="lkTyping"><textarea id="lkIn" class="txt" rows="3" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Écris ou dicte le lien ici…"></textarea></div>
+  <div class="row"><button id="lkOk" class="mc gold">Valider</button><button id="lkRetry" class="mc hide">🔁 Revoir le lien (repasse 1)</button></div>
+ </div>
  <div id="lkWhy" class="hide"><div class="lnwhy" id="lkWhyT"></div><div class="row"><button id="lkDone" class="mc green">Continuer ➜</button></div></div>
  <div class="msg" id="lkMsg"></div>
 </div>
@@ -679,7 +696,7 @@ function ficheHTML(f){return esc(FICHES[f].txt).replace(/\{([^}]*)\}/g,'<span cl
 const SKEY="mineParCoeur_v1";
 let S;
 try{S=JSON.parse(localStorage.getItem(SKEY))||{}}catch(e){S={}}
-S.f=S.f||{};S.links=S.links||{};S.linkWhy=S.linkWhy||{};S.boss=S.boss||{};S.unlocked=S.unlocked||1;S.world=S.world||0;S.log=S.log||[];S.stats=S.stats||{badLinks:0};
+S.f=S.f||{};S.links=S.links||{};S.linkWhy=S.linkWhy||{};S.linkLearn=S.linkLearn||{};S.boss=S.boss||{};S.unlocked=S.unlocked||1;S.world=S.world||0;S.log=S.log||[];S.stats=S.stats||{badLinks:0};
 if(S.sound===undefined)S.sound=true;
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
 function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -1048,7 +1065,7 @@ const LIENS=(()=>{
    <div class="lntypes">${Object.keys(TYPES).map(k=>`<div class="lnty1"><span class="lnico">${TYPES[k].icon}</span><div><b>${TYPES[k].plain}</b><br>${TYPES[k].why}<br><i>Exemple : ${TYPES[k].ex}</i></div></div>`).join("")}</div>
    ${listHTML(kind)}
    <h3>Comment faire ?</h3>
-   <ol><li>${how}</li><li>Choisis la sorte de lien.</li><li>Dis pourquoi : tape un mot, ou dicte au micro 🎤.</li><li>Sur la carte, chaque ${un} déjà posé montre une icône. Touche-la pour revoir pourquoi les deux fiches vont ensemble.</li><li>Si les deux fiches ne vont pas ensemble, ${un} casse. Ce n'est pas grave : une piste t'aide.</li></ol>
+   <ol><li>${how}</li><li>Choisis la sorte de lien.</li><li>${V?"Dis pourquoi : tape un mot, ou dicte au micro 🎤.":"Apprends le lien en 3 passes. D'abord tu le lis et tu le recopies. Ensuite un texte à trous te met sur la voie. Puis tu le dis d'un bloc, au clavier ou au micro 🎤."}</li><li>Sur la carte, chaque ${un} déjà posé montre une icône. Touche-la pour revoir pourquoi les deux fiches vont ensemble.</li><li>Si les deux fiches ne vont pas ensemble, ${un} casse. Ce n'est pas grave : une piste t'aide.</li></ol>
    <div class="lnbtns"><button type="button" class="lnok" id="lnHelpOk">✔ J'ai compris</button></div></div>`;}
  let onDone=null;
  function openHelp(kind,cb){closeBubble();let ov=document.getElementById("lnHelp");if(!ov){ov=document.createElement("div");ov.id="lnHelp";document.body.appendChild(ov);}
@@ -1062,7 +1079,36 @@ const LIENS=(()=>{
   return `<circle r="36" fill="#fffdf5" stroke="#3a2710" stroke-width="4"/><text y="2" text-anchor="middle" dominant-baseline="middle" font-size="38">${ic}</text>`;}
  function remindShow(L){openBubble(L,reasonOf(L&&L.key));}
  function remindHide(){closeBubble();}
- return {SHORT,TYPES,EX,apply,q,match,badPair,partner,card,selShow,selHide,openHelp,closeHelp,isHelpOpen,N,mini,typ,reasonOf,setReason,listHTML,bindList,openBubble,closeBubble,isBubbleOpen,placeMarks,clearMarks,spread,badgeCanvas,badgeSVG,remindShow,remindHide};
+
+ /* apprentissage du lien en 3 passes : le texte est montré, puis un texte à trous, puis d'un bloc */
+ const STOP=new Set(("la le les des de du un une et ou que qui ce se sont est a ont dit dans pour avec au aux en d l n y on ne pas plus leur leurs ses son sa cette cet quand alors si dont par sur entre vers sans sous comme ainsi donc car mais ou a je tu il elle nous vous ils elles mon ma mes ton ta tes notre nos votre vos ni fiche fiches explique expliquent utilise utilisee utilisees utilisent donne donnent part parts marche applique appliquent va vont avoir fait faire etre c s qu").split(" "));
+ function splitEx(ex){const parts=[];const re=/([A-Za-zÀ-ÿ0-9°]+(?:['’][A-Za-zÀ-ÿ0-9°]+)?(?:-[A-Za-zÀ-ÿ0-9°]+)*)|([^A-Za-zÀ-ÿ0-9°]+)/g;let m;while((m=re.exec(String(ex||"")))){if(m[1])parts.push({w:m[1],p:false});else parts.push({w:m[2],p:true});}return parts;}
+ function core(w){return N(w).split(" ").filter(Boolean).pop()||"";}
+ function kwHit(n,L){if(!L||!L.kw)return false;return L.kw.some(k=>N(k).split(" ").filter(Boolean).some(x=>n===x||(x.length>=4&&(n.includes(x)||x.includes(n)))));}
+ function keepWord(w,L,parts,i){const n=core(w);if(!n)return true;if(STOP.has(n))return true;if(n.length<=2&&!/^\d+°?$/.test(n)&&!kwHit(n,L))return true;if(/^\d+$/.test(n)&&+n>=1&&+n<=22&&!kwHit(n,L)){const prev=parts.slice(0,i).reverse().find(t=>!t.p);if(prev&&core(prev.w)==="fiche")return true;}return false;}
+ function hintWord(w){const m=String(w).match(/^([A-Za-zÀ-ÿ]['’])(.+)$/);return m?m[2]:w;}
+ function hintOf(w){const show=hintWord(w);const letters=/[A-Za-zÀ-ÿ]/.test(show);const n=Array.from(show).length;return show[0]+" · "+n+" "+(letters?(n>1?"lettres":"lettre"):(n>1?"signes":"signe"));}
+ function gapsOf(L){const ex=String((L&&(L.ex||EX[L.key]))||"");const parts=splitEx(ex);const cand=[];parts.forEach((t,i)=>{if(!t.p&&!keepWord(t.w,L,parts,i))cand.push(i);});
+  const score=i=>{const n=core(parts[i].w);let s=n.length;if(kwHit(n,L))s+=50;if(/^\d+°?$/.test(n))s+=20;return s;};
+  const k=Math.max(2,Math.min(7,Math.round((cand.length||1)*.55)));
+  const picked=(cand.length?cand:parts.map((t,i)=>t.p?-1:i).filter(i=>i>=0)).map(i=>[i,score(i)]).sort((a,b)=>b[1]-a[1]||a[0]-b[0]).slice(0,k).map(a=>a[0]);
+  const blanks=new Set(picked);const words={};blanks.forEach(i=>words[i]=parts[i].w);
+  const html=parts.map((t,i)=>{if(t.p)return esc(t.w);if(!blanks.has(i))return esc(t.w);
+   const h=hintOf(t.w),w=Math.max(3,Array.from(t.w).length)+1.5;
+   return `<span class="lkgap"><input class="gap" data-i="${i}" style="width:${w}ch" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="${esc(h)}"><small class="lkhint">${esc(h)}</small></span>`;}).join("");
+  return {ex,parts,blanks,words,html,list:[...blanks].sort((a,b)=>a-b).map(i=>({i,w:parts[i].w}))};}
+ function matchGap(v,exp){const a=N(v),b=N(exp);if(!a||!b)return false;if(a===b)return true;const sa=sing(a),sb=sing(b);if(sa===sb)return true;const ca=core(v),cb=core(exp);if(ca&&cb&&(ca===cb||sing(ca)===sing(cb)))return true;const pairs=[[sa,sb],[ca,cb]];for(const [x,y] of pairs){if(x&&y&&Math.min(x.length,y.length)>=5&&lev(x,y)<=1)return true;}return false;}
+ function contentWords(s){return N(s).split(" ").map(sing).filter(w=>w&&w.length>=3&&!STOP.has(w));}
+ function matchCopy(v,L){let n=N(v);if(!n)return false;for(const k of Object.keys(NUMW).sort((x,y)=>y.length-x.length))n=n.replace(new RegExp("\\b"+k+"\\b","g"),NUMW[k]);
+  const ex=String((L&&(L.ex||EX[L.key]))||"");const exN=N(ex);if(n===exN)return true;
+  const exW=contentWords(ex),vW=n.split(" ").map(sing);
+  if(!exW.length)return match(v,L);
+  const hit=exW.filter(x=>vW.some(w=>w===x||(x.length>=6&&lev(w,x)<=1)||(x.length>=6&&w.startsWith(x))));
+  return hit.length/exW.length>=.72;}
+ function matchLearn(v,L,stage,gapPairs){if(stage===2){const gaps=Array.isArray(gapPairs)?gapPairs:[];const all=gaps.length&&gaps.every(p=>matchGap(p[0],p[1]));if(all)return true;if(String(v||"").trim())return matchCopy(v,L);return false;}
+  if(stage===3)return match(v,L)||matchCopy(v,L);
+  return matchCopy(v,L);}
+ return {SHORT,TYPES,EX,apply,q,match,badPair,partner,card,selShow,selHide,openHelp,closeHelp,isHelpOpen,N,mini,typ,reasonOf,setReason,listHTML,bindList,openBubble,closeBubble,isBubbleOpen,placeMarks,clearMarks,spread,badgeCanvas,badgeSVG,remindShow,remindHide,gapsOf,hintOf,matchCopy,matchGap,matchLearn,splitEx};
 })();
 
 /* ================= SCÈNE 3D ================= */
@@ -1341,11 +1387,15 @@ const VOIX={bars:{},pending:null,denied:false,cur:null,
   B.field.addEventListener("input",()=>this.chips(B));
   if(!this.SR()||this.denied)q(".vxmic").classList.add("vxhide"),q(".vxrmic").classList.add("vxhide");
   setInterval(()=>this.tick(B),400);this.tick(B);return B;},
- tick(B){const vis=!!(B.field.offsetParent||B.field.getClientRects().length);B.q(".vxrow").classList.toggle("vxhide",!vis);
-  B.q(".vxpapa").classList.toggle("vxhide",!(B.o.papaOK?B.o.papaOK():true));
-  if(!vis){B.q(".vxchips").classList.add("vxhide");B.q(".vxedit").classList.add("vxhide");if(this.cur===B&&B.mode==="main")this.stop(B);}
-  else B.q(".vxchips").classList.remove("vxhide");
-  if(B.field.value!==B.last)this.chips(B);},
+ tick(B){const fieldVis=!!(B.field&&(B.field.offsetParent||B.field.getClientRects().length));
+  const papaOn=B.o.papaOK?!!B.o.papaOK():true;
+  const barVis=B.o.barOK?!!B.o.barOK():fieldVis;
+  B.q(".vxrow").classList.toggle("vxhide",!barVis);
+  B.q(".vxpapa").classList.toggle("vxhide",!papaOn);
+  if(B.q(".vxmic"))B.q(".vxmic").classList.toggle("vxhide",!fieldVis||!this.SR()||this.denied);
+  if(!barVis){B.q(".vxchips").classList.add("vxhide");B.q(".vxedit").classList.add("vxhide");if(this.cur===B&&B.mode==="main")this.stop(B);}
+  else B.q(".vxchips").classList.toggle("vxhide",!fieldVis);
+  if(fieldVis&&B.field.value!==B.last)this.chips(B);},
  words(B){return B.field.value.split(/\s+/).filter(Boolean);},
  chips(B){B.last=B.field.value;const W=this.words(B);const c=B.q(".vxchips");
   c.innerHTML=W.length&&(this.cur===B||B.used)?W.map((w,i)=>`<button type="button" class="vxchip${i===B.editI?" on":""}" data-i="${i}">${this.esc(w)}</button>`).join(""):"";
@@ -1484,13 +1534,37 @@ function railTap(f){if(!FS(f).forged){SND.bad();return toast(`Forge d'abord la f
  setTimeout(()=>{if(!L){removeRails(R.key,true);SND.breakR();S.stats.badLinks++;save();toast(`💥 Les rails cassent. `+LIENS.badPair(a,b,LINKS.filter(l=>l.w===FW[a]),l=>!!S.links[l.key],x=>FS(x).forged),7000);}
   else openLink(L);},dur);}
 function chip(f){return `<button class="chip" data-peek="${f}"><span class="badge ${FICHES[f].t}">${FICHES[f].t}${f}</span>${esc(FICHES[f].title)}</button>`;}
-function openLink(L){if(typeof LIENS!=="undefined")LIENS.remindHide();LK={L,step:1,done:false,wrong:0};
+function learnSt(key){S.linkLearn=S.linkLearn||{};return S.linkLearn[key]||(S.linkLearn[key]={typ:false,pass:1});}
+const LKINSTR={1:"Passe 1 sur 3. Lis le lien, puis recopie-le en entier.",2:"Passe 2 sur 3. Des mots manquent. Un indice te met sur la voie : la première lettre et le nombre de lettres.",3:"Passe 3 sur 3. Dis le lien d'un bloc, de mémoire."};
+function fillType(L){$("lkSlot").className="slot good";$("lkSlot").innerHTML=`<div class="lbl">${LTYPES[L.t].name}</div>`;$("lkLabels").innerHTML="";}
+function bindLinkGaps(){const gaps=[...$("lkGaps").querySelectorAll("input.gap")];
+ gaps.forEach((g,k)=>{const nx=()=>{if(gaps[k+1])gaps[k+1].focus();else $("lkOk").focus();};
+  g.addEventListener("keydown",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();if(e.key==="Enter"&&!gaps[k+1])$("lkOk").click();else nx();}});
+  g.addEventListener("input",()=>{if(/\s$/.test(g.value)){g.value=g.value.trim();nx();}});});
+ return gaps;}
+function renderLinkLearn(){const L=LK.L,st=learnSt(L.key),p=Math.max(1,Math.min(3,st.pass||1));LK.step=2;LK.learn=p;LK.wrong=0;
+ $("lkStep2").classList.remove("hide");$("lkWhy").classList.add("hide");
+ $("lkPasses").innerHTML=[1,2,3].map(k=>`<span class="pip ${k<p?"done":k===p?"cur":""}">${k}</span>`).join("")+` <span style="font-weight:700;text-shadow:1px 1px 0 #000">Le lien à apprendre</span>`;
+ $("lkInstr").textContent=LKINSTR[p];$("lkQ").textContent="";$("lkQ").classList.add("hide");
+ $("lkMsg").textContent="";$("lkMsg").className="msg";$("lkIn").value="";$("lkRetry").classList.add("hide");
+ const gbox=$("lkGaps"),model=$("lkModel"),typ=$("lkTyping");typ.classList.remove("hide");
+ if(p===1){model.classList.remove("hide");model.textContent=L.ex||"";gbox.classList.add("hide");gbox.innerHTML="";LK.gaps=null;
+  $("lkIn").placeholder="Recopie le lien ici…";$("lkOk").textContent="Valider la copie";
+  setTimeout(()=>{try{$("lkIn").focus({preventScroll:true})}catch(_){}},60);}
+ else if(p===2){model.classList.add("hide");gbox.classList.remove("hide");LK.gaps=LIENS.gapsOf(L);gbox.innerHTML=LK.gaps.html;
+  $("lkIn").placeholder="Ou dicte la phrase entière ici…";$("lkOk").textContent="Valider les trous";
+  const gaps=bindLinkGaps();setTimeout(()=>{try{(gaps[0]||$("lkIn")).focus({preventScroll:true})}catch(_){}},60);}
+ else{model.classList.add("hide");gbox.classList.add("hide");gbox.innerHTML="";LK.gaps=null;
+  $("lkIn").placeholder="Écris ou dicte le lien d'un bloc…";$("lkOk").textContent="⚡ Alimenter le réseau";
+  setTimeout(()=>{try{$("lkIn").focus({preventScroll:true})}catch(_){}},60);}}
+function openLink(L){if(typeof LIENS!=="undefined")LIENS.remindHide();const st=learnSt(L.key);LK={L,step:st.typ?2:1,done:false,wrong:0,learn:st.pass||1};
  $("lkPair").innerHTML=chip(L.a)+" <b style='font-size:22px'>➜</b> "+chip(L.b)+"<p style='font-size:14px;opacity:.85'>Touche une fiche pour la relire.</p>";
  $("lkPeek").innerHTML="";$("lkSlot").className="slot";$("lkSlot").innerHTML="Pose un bloc ici";
- $("lkStep2").classList.add("hide");$("lkWhy").classList.add("hide");$("lkIn").value="";$("lkMsg").textContent="";$("lkMsg").className="msg";
+ $("lkStep2").classList.add("hide");$("lkWhy").classList.add("hide");$("lkIn").value="";$("lkMsg").textContent="";$("lkMsg").className="msg";$("lkRetry").classList.add("hide");
  const keys=Object.keys(LTYPES).sort(()=>Math.random()-.5);$("lkLabels").innerHTML=keys.map(k=>`<div class="lbl" data-t="${k}">${LTYPES[k].name}</div>`).join("");
  $("lkLabels").querySelectorAll(".lbl").forEach(el=>setupDrag(el,$("lkSlot"),labelDrop));
  $("lkPair").querySelectorAll("[data-peek]").forEach(b=>b.onclick=()=>{const f=+b.dataset.peek;$("lkPeek").innerHTML=`<div class="ftext"><b>Fiche ${f} · ${esc(FICHES[f].title)}</b><br>${ficheHTML(f)}</div>`;});
+ if(st.typ){fillType(L);renderLinkLearn();}
  openPanel("link");}
 function setupDrag(el,slot,onDrop){
  el.addEventListener("pointerdown",e=>{e.preventDefault();if(LK&&LK.step!==1)return;AU.init();const r=el.getBoundingClientRect(),ghost=el.cloneNode(true);ghost.classList.add("drag");
@@ -1503,20 +1577,27 @@ function setupDrag(el,slot,onDrop){
    if(ev.type==="pointerup"&&inSlot(ev)&&moved>1)onDrop(el);else if(moved<3){$("lkMsg").className="msg ko";$("lkMsg").textContent="Glisse le bloc jusqu'aux rails.";}};
   window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});}
 function labelDrop(el){const t=el.dataset.t,L=LK.L;
- if(t===L.t){SND.good();LK.step=2;$("lkSlot").className="slot good";$("lkSlot").innerHTML=`<div class="lbl">${LTYPES[t].name}</div>`;el.remove();
-  $("lkMsg").textContent="";$("lkStep2").classList.remove("hide");$("lkQ").textContent=LIENS.q(L);setTimeout(()=>$("lkIn").focus(),60);}
+ if(t===L.t){SND.good();LK.step=2;fillType(L);el.remove();
+  const st=learnSt(L.key);st.typ=true;if(!st.pass||st.pass<1)st.pass=1;save();
+  $("lkMsg").textContent="";renderLinkLearn();}
  else{SND.bad();LK.wrong++;$("lkSlot").classList.add("shake");setTimeout(()=>$("lkSlot").classList.remove("shake"),400);
   $("lkMsg").className="msg ko";$("lkMsg").innerHTML=`Pas tout à fait. ${LTYPES[t].why} Est-ce le cas ici ? Relis les deux fiches.`;}}
-const kwNorm=s=>stripAcc(String(s).toLowerCase()).replace(/[-']/g," ").replace(/[^a-z0-9° ]/g," ").replace(/\s+/g," ").trim();
-function linkAnswer(v){return LIENS.match(v,LK.L);}
-$("lkOk").onclick=()=>{if(!LK||LK.step!==2)return;const v=$("lkIn").value;
- if(linkAnswer(v)){const L=LK.L;LK.done=true;LK.step=3;S.links[L.key]=today();LIENS.setReason(L.key,v);save();powerRails(L.key,true);SND.good();
-  $("lkStep2").classList.add("hide");$("lkMsg").textContent="";$("lkWhyT").innerHTML=`<b>✅ Bien vu ! Voici le lien :</b>${esc(L.ex||"")}`;$("lkWhy").classList.remove("hide");}
- else{SND.bad();LK.wrong++;$("lkMsg").className="msg ko";$("lkMsg").textContent="Ce n'est pas ça. Relis les deux fiches, puis réessaie."+(LK.wrong>=2?" Regarde le mot qui revient dans les deux fiches.":"");}};
+function linkAnswer(v,pairs){return LIENS.matchLearn(v,LK.L,LK.learn||1,pairs);}
+function finishLink(){const L=LK.L;LK.done=true;LK.step=3;S.links[L.key]=today();const said=($("lkIn").value||"").trim()||(L.ex||"");LIENS.setReason(L.key,said);const st=learnSt(L.key);st.typ=true;st.pass=4;save();powerRails(L.key,true);SND.good();
+ $("lkStep2").classList.add("hide");$("lkMsg").textContent="";$("lkWhyT").innerHTML=`<b>✅ Bien vu ! Voici le lien :</b>${esc(L.ex||"")}`;$("lkWhy").classList.remove("hide");}
+$("lkOk").onclick=()=>{if(!LK||LK.done||LK.step!==2)return;const p=LK.learn||learnSt(LK.L.key).pass||1;const v=$("lkIn").value;let pairs=null;
+ if(p===2){pairs=[...$("lkGaps").querySelectorAll("input.gap")].map(g=>[g.value,(LK.gaps&&LK.gaps.words||{})[g.dataset.i]||""]);}
+ if(linkAnswer(v,pairs)){const st=learnSt(LK.L.key);st.pass=p+1;save();
+  if(st.pass>3)return finishLink();
+  SND.good();$("lkMsg").className="msg ok";$("lkMsg").textContent=p===1?"C'est recopié. Passe 2 : un texte à trous.":"Les trous sont justes. Passe 3 : dis-le d'un bloc.";
+  setTimeout(()=>renderLinkLearn(),700);}
+ else{SND.bad();LK.wrong++;const m=p===1?"Ce n'est pas encore ça. Relis le lien au-dessus, puis recopie-le.":p===2?"Ce n'est pas ça. Regarde l'indice : la première lettre et le nombre de lettres.":"Ce n'est pas ça. Rappelle-toi le lien, puis dis-le d'un bloc.";
+  $("lkMsg").className="msg ko";$("lkMsg").textContent=m;if(p===3&&LK.wrong>=2)$("lkRetry").classList.remove("hide");}};
 $("lkDone").onclick=()=>{if(!LK||!LK.done)return;const L=LK.L;SND.click();closePanel("link");
  const ws=worldState(L.w);toast(`⚡ Réseau alimenté ! Liens ${ws.links}/${ws.nl}. Touche l'icône sur le rail pour revoir le lien.`);updateHUD();
  if(ws.awake&&!ws.beaten)setTimeout(()=>{SND.wake();refreshGolem(L.w);GOLEMS[L.w].g.userData.shake=1;pop("⚔️ Le gardien se réveille !","<p>Le réseau est complet. Le gardien de ce monde veut te tester.</p><p>Il te donne le titre ou le début d'une fiche. Tu dois taper toute la fiche avant la fin du temps. Tu as 3 cœurs.</p>",[{t:"⚔️ Combattre",fn:()=>startBoss(L.w)},{t:"Plus tard",cls:""}]);},900);};
-$("lkIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("lkOk").click();}});
+$("lkRetry").onclick=()=>{if(!LK||LK.done)return;SND.click();const st=learnSt(LK.L.key);st.pass=1;save();renderLinkLearn();};
+$("lkIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("lkOk").click();}});
 function linkClosed(){if(LK&&!LK.done){removeRails(LK.L.key,true);}LK=null;}
 /* ---------- FORGE DES MOTS ---------- */
 const FG={f:null,pass:1,practice:false,gaps:null,seed:0,res:false};
@@ -1565,12 +1646,14 @@ function resultHTML(ops){let k=0;return ops.map(o=>{const d=`style="animation-de
  if(o.k==="st")return wordBlock(o.r,"stone");if(o.k==="pu")return wordBlock(o.r,"");return "";}).join(" ");}
 function playResultSounds(ops){let i=0;for(const o of ops){if(i>16)break;if(o.k==="ok"||o.k==="mn"||o.k==="sy"||o.k==="mv"){SND.place(i);i++;}else if(!o.near&&(o.k==="wr"||o.k==="mi"||o.k==="ex")){SND.crack(i);i++;}}}
 function checkForge(){if(FG.res)return;const f=FG.f,s=FS(f);let res;
- if(FG.pass===2||FG.pass===3){const T=REF[f],ops=[];let err=0,minor=0;const inputs={};$("fBoard").querySelectorAll("input.gap").forEach(g=>inputs[g.dataset.i]=g.value);
+ const pr=VOIX.take();
+ if(pr)res=pr;
+ else if(FG.pass===2||FG.pass===3){const T=REF[f],ops=[];let err=0,minor=0;const inputs={};$("fBoard").querySelectorAll("input.gap").forEach(g=>inputs[g.dataset.i]=g.value);
   T.forEach((t,i)=>{if(!FG.gaps.has(i)){ops.push({k:t.p?"pu":"st",r:t});return;}const u=tokenize(inputs[i]||"",true).filter(x=>!x.p);
    if(!u.length){ops.push({k:"mi",r:t});err++;return;}const e=u.length===1?eqTok(t,u[0]):0;
    if(e===2)ops.push({k:"ok",r:t});else if(e===1){ops.push({k:"mn",r:t,u:u[0]});minor++;}else{ops.push({k:"wr",r:t,u:{c:u.map(x=>x.c).join(" ")}});err++;}});
   res={ops,err,minor,soft:[],ok:err===0};}
- else{const pr=VOIX.take();if(pr)res=pr;else{const txt=$("fText").value;if(!txt.trim()){$("fMsg").className="msg ko";$("fMsg").textContent="Tape la fiche avant de frapper l'enclume.";SND.nudge();return;}res=diff(REF[f],tokenize(txt,true));}}
+ else{const txt=$("fText").value;if(!txt.trim()){$("fMsg").className="msg ko";$("fMsg").textContent="Tape la fiche avant de frapper l'enclume.";SND.nudge();return;}res=diff(REF[f],tokenize(txt,true));}
  FG.res=true;VOIX.after("forge",res);SND.anvil();$("fBoard").innerHTML=resultHTML(res.ops);$("fTyping").classList.add("hide");playResultSounds(res.ops);$("fGo").classList.add("hide");
  s.minor+=res.minor;const mnote=res.minor?` Attention à ${res.minor} petite${res.minor>1?"s":""} faute${res.minor>1?"s":""} (bloc de fer orange).`:"";
  if(FG.practice){setTimeout(()=>res.ok?SND.good():SND.bad(),500);schedule(f,res.ok);logEv(f,"entrainement",res.ok);if(!res.ok)s.errR+=1;save();
@@ -1685,7 +1768,7 @@ placePlayer(S.world);camFor(S.world);CAM.target.copy(islandCenter(S.world));CAM.
 updateHUD();requestAnimationFrame(loop);
 $("bPlay").onclick=()=>{IOSAU.unlock();SND.good();$("title").classList.remove("on");$("hud").classList.remove("hide");started=true;CAM.auto=false;
  const ws=worldState(S.world);if(!ws.forged&&S.world===0)toast("⛏️ Touche une enclume pour forger ta première fiche.",4500);else if(dueList().length)toast(`🔁 ${dueList().length} fiche${dueList().length>1?"s":""} à réviser aujourd'hui.`,4000);};
-window.__fg={LIENS,railMode:()=>railMode,S:()=>S,FS,nextRound,renderForge,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,railAt,updateRailMarks,openRailBubble,
+window.__fg={LIENS,railMode:()=>railMode,S:()=>S,FS,nextRound,renderForge,FICHES,WORLDS,LINKS,REF,tokenize,diff,pickGaps,softText,isFree,FG,DU,setWorld,worldState,dueList,startReview,startBoss,openForge,reqWords,railAt,updateRailMarks,openRailBubble,learnSt,renderLinkLearn,openLink,LK:()=>LK,linkGaps:()=>LK&&LK.gaps?LK.gaps.list:[],
  stationScreen:f=>{const r=FW[f]===S.world&&(window.__signRects||[]).find(r=>r.f===f);return r?[(r.l+r.r)/2,(r.t+r.b)/2]:screenOf(STN[f].pos.clone().add(new V3(0,1.2,0)));},anvilScreen:f=>screenOf(STN[f].pos.clone().add(new V3(0,1.2,0))),golemScreen:i=>screenOf(GOLEMS[i].g.position.clone().add(new V3(0,1.6,0))),
  fps:()=>{const a=FPS.frames;return a.length?Math.round(a.length/a.reduce((x,y)=>x+y,0)):0;},player:()=>P.g.position.toArray(),pickAt:(x,y)=>{const h=pick(x,y,stationHits.concat(golemHits));const g=pick(x,y,groundMeshes);return {h:h&&h.object.userData,g:g&&g.point.toArray(),started,panelOpen};},groundScreen:(dx,dz)=>{const isl=ISL[S.world],x=isl.cx+dx,z=isl.cz+dz;return screenOf(new V3(x,groundY(x,z),z));},rails:()=>Object.keys(RAILS),railIcons:()=>Object.keys(RAILS).filter(k=>RAILS[k].powered).map(k=>({key:k,t:(LINKS.find(l=>l.key===k)||{}).t})),
  iconScreen:key=>{const m=(window.__lnMarkRects||[]).find(r=>r.key===key);return m?[m.x,m.y]:null;},
@@ -1694,14 +1777,14 @@ window.__fg={LIENS,railMode:()=>railMode,S:()=>S,FS,nextRound,renderForge,FICHES
  layRails,calls:()=>renderer.info.render.calls};
 
 /* ---- micro et Papa écoute ---- */
-VOIX.attach("forge",{field:$("fText"),anchor:$("fTyping"),fiche:()=>FG.f,papaOK:()=>FG.practice||FG.pass===4,canRedo:()=>!FG.practice,
+VOIX.attach("forge",{field:$("fText"),anchor:$("fTyping"),fiche:()=>FG.f,papaOK:()=>!!FG.f,barOK:()=>!!FG.f&&$("forge").classList.contains("on"),canRedo:()=>!FG.practice,
  retry:t=>{$("fAgain").click();$("fText").value=t;checkForge();},
  papa:(g,f)=>{checkForge();papaNote(f,{coeur:"parcoeur",presque:"difficile",revoir:"nonsu"}[g]);save();}});
 VOIX.attach("duel",{field:$("dIn"),fiche:()=>DU.cur,canRedo:()=>false,
  papa:(g,f)=>{duelAnswer(false);papaNote(f,{coeur:"parcoeur",presque:"difficile",revoir:"nonsu"}[g]);save();},
  pause:()=>{if(!DU._p){DU._p=performance.now();DU._wasP=DU.paused;DU.paused=true;}},
  resume:()=>{if(DU._p){DU.t0+=performance.now()-DU._p;DU._p=0;DU.paused=DU._wasP;}}});
-VOIX.attach("link",{field:$("lkIn"),fiche:()=>null,papaOK:()=>false,canRedo:()=>false,papa:()=>{}});
+VOIX.attach("link",{field:$("lkIn"),anchor:$("lkTyping"),fiche:()=>null,papaOK:()=>false,barOK:()=>!!(LK&&LK.step===2&&!LK.done&&$("link").classList.contains("on")),canRedo:()=>false,papa:()=>{}});
 window.__voix=VOIX;
 
 </script><!--CLAVIER--><style>/* CLAVIER iPad : mode « clavier ouvert » */
